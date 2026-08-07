@@ -1,0 +1,17 @@
+# Binaries
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Go workspace files
+go.work
+
+dist/
+.env
+.DS_Store
