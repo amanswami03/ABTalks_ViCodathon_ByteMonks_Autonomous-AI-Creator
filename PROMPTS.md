@@ -118,3 +118,8 @@
     Rejected Topics
     Reason for rejection
     Use mock data.
+12. Build the Memory section.
+    Display:
+    - Interests
+    - Recent Topics
+    Use mock data.

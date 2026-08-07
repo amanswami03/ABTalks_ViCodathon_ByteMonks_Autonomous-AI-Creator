@@ -238,6 +238,26 @@ export default function DashboardLayout() {
                     </ul>
                   </div>
                 </div>
+              ) : activeSection === 'Memory' ? (
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <h3 className="text-lg font-semibold text-[#DFD0B8]">Interests</h3>
+                    <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Customer journey optimization</li>
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Narrative clarity and positioning</li>
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">B2B content strategy</li>
+                    </ul>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <h3 className="text-lg font-semibold text-[#DFD0B8]">Recent Topics</h3>
+                    <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Launch sequencing and narrative pacing</li>
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Customer objections and objections handling</li>
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Automation and scaling communications</li>
+                    </ul>
+                  </div>
+                </div>
               ) : (
                 <p className="max-w-2xl text-base leading-8 text-[#DFD0B8]/80">{activeContent.description}</p>
               )}
