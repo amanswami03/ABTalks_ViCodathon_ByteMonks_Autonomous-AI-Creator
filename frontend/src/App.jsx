@@ -1,17 +1,9 @@
 export default function App() {
   return (
-    <main className="app-shell">
-      <section className="hero">
-        <span className="badge">ABTalks</span>
-        <h1>AI Creator Workspace</h1>
-        <p className="subtitle">
-          Create, plan, and publish high-impact talks with an autonomous AI workflow.
-        </p>
-        <div className="cta-row">
-          <button className="primary-button">Create Session</button>
-          <button className="secondary-button">Explore</button>
-        </div>
-      </section>
-    </main>
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-slate-100">
+      <div className="rounded-2xl border border-white/10 bg-slate-900/70 px-8 py-10 text-center shadow-2xl shadow-cyan-950/30 backdrop-blur">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Frontend Initialized</h1>
+      </div>
+    </div>
   );
 }
