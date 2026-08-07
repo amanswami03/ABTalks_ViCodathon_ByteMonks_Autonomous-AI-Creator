@@ -97,3 +97,11 @@
     - Agent Name
     - Agent Status
     - Theme-ready layout
+9. Build the Dashboard overview.
+    Include cards for:
+    - Current Activity
+    - Statistics
+    - Recent Feed
+    - Topic Queue
+    - Memory Summary
+    Use mock data.

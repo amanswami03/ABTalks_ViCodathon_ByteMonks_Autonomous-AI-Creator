@@ -99,7 +99,62 @@ export default function DashboardLayout() {
                 </div>
               </div>
 
-              <p className="max-w-2xl text-base leading-8 text-[#DFD0B8]/80">{activeContent.description}</p>
+              {activeSection === 'Overview' ? (
+                <div className="grid gap-6 xl:grid-cols-2">
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-[#DFD0B8]">Current Activity</h3>
+                      <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-300">
+                        Online
+                      </span>
+                    </div>
+                    <p className="mt-4 text-sm leading-7 text-[#DFD0B8]/80">
+                      The agent is actively reviewing recent context and preparing smart responses for the next step.
+                    </p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <h3 className="text-lg font-semibold text-[#DFD0B8]">Statistics</h3>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-3xl font-semibold text-[#948979]">24</p>
+                        <p className="text-sm text-[#DFD0B8]/70">Tasks completed</p>
+                      </div>
+                      <div>
+                        <p className="text-3xl font-semibold text-[#948979]">92%</p>
+                        <p className="text-sm text-[#DFD0B8]/70">Response quality</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <h3 className="text-lg font-semibold text-[#DFD0B8]">Recent Feed</h3>
+                    <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
+                      <li>• New prompt captured from the latest session</li>
+                      <li>• Context summary refreshed successfully</li>
+                      <li>• Topic cluster updated with 3 new signals</li>
+                    </ul>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <h3 className="text-lg font-semibold text-[#DFD0B8]">Topic Queue</h3>
+                    <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
+                      <li>• Product strategy</li>
+                      <li>• Audience segmentation</li>
+                      <li>• Messaging refinement</li>
+                    </ul>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6 xl:col-span-2">
+                    <h3 className="text-lg font-semibold text-[#DFD0B8]">Memory Summary</h3>
+                    <p className="mt-4 text-sm leading-7 text-[#DFD0B8]/80">
+                      The agent remembers recent preferences, workspace goals, and conversation priorities to keep future recommendations aligned.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="max-w-2xl text-base leading-8 text-[#DFD0B8]/80">{activeContent.description}</p>
+              )}
             </div>
           </main>
         </div>
