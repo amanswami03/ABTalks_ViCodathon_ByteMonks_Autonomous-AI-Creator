@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.DS_Store
+.vite/
+.vite
+npm-debug.log*
+package-lock.json
