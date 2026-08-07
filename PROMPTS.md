@@ -67,3 +67,11 @@
     - Rounded Corners
     - Smooth Animations
     - Desktop First
+
+5. Build the Landing page.
+
+    The page should allow the user to:
+    - Enter Persona Name
+    - Select AI Domain
+    - Click Initialize Agent
+    Don't connect the backend yet.
