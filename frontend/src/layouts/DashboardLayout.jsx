@@ -152,6 +152,57 @@ export default function DashboardLayout() {
                     </p>
                   </div>
                 </div>
+              ) : activeSection === 'Feed' ? (
+                <div className="space-y-4">
+                  {[
+                    {
+                      content: 'Drafted a new positioning angle for the launch narrative based on the latest audience signals.',
+                      time: '2m ago',
+                      rationale: 'This aligns with the current campaign objectives and strengthens the core message.',
+                      sources: ['Customer interviews', 'Support transcripts', 'Recent product notes'],
+                    },
+                    {
+                      content: 'Flagged a shift in interest toward automation workflows and summarized the top concerns.',
+                      time: '18m ago',
+                      rationale: 'The pattern suggests the audience is prioritizing efficiency over feature breadth.',
+                      sources: ['Usage analytics', 'Feedback survey', 'Market watchlist'],
+                    },
+                    {
+                      content: 'Prepared a follow-up content angle that connects product updates with customer value stories.',
+                      time: '45m ago',
+                      rationale: 'This helps bridge product launches with stronger narrative continuity.',
+                      sources: ['Content calendar', 'Recent launches', 'Persona notes'],
+                    },
+                  ].map((post, index) => (
+                    <div key={index} className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-base leading-7 text-[#DFD0B8]">{post.content}</p>
+                          <p className="mt-3 text-sm text-[#948979]">{post.time}</p>
+                        </div>
+                        <span className="rounded-full border border-[#948979]/20 bg-[#393E46] px-3 py-1 text-xs uppercase tracking-[0.25em] text-[#DFD0B8]/70">
+                          Feed
+                        </span>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-[#DFD0B8]">Rationale</p>
+                        <p className="mt-1 text-sm leading-7 text-[#DFD0B8]/80">{post.rationale}</p>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-[#DFD0B8]">Sources</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {post.sources.map((source) => (
+                            <span key={source} className="rounded-full border border-[#948979]/20 bg-[#393E46] px-3 py-1 text-xs text-[#DFD0B8]/80">
+                              {source}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <p className="max-w-2xl text-base leading-8 text-[#DFD0B8]/80">{activeContent.description}</p>
               )}

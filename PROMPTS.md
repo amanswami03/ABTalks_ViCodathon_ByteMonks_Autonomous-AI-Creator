@@ -105,3 +105,10 @@
     - Topic Queue
     - Memory Summary
     Use mock data.
+10. Build the Feed section.
+    Display posts with:
+    - Content
+    - Time
+    - Rationale
+    - Sources
+    Use mock data.
