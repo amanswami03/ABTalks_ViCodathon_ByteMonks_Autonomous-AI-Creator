@@ -75,3 +75,11 @@
     - Select AI Domain
     - Click Initialize Agent
     Don't connect the backend yet.
+
+6. Create DashboardLayout.
+    It should contain:
+    - Sidebar
+    - Navbar
+    - Main Content Area
+    Use React Router Outlet.
+    Only build the layout.
