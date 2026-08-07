@@ -65,13 +65,24 @@ export default function DashboardLayout() {
 
         <div className="flex-1">
           <header className="border-b border-[#948979]/20 bg-[#393E46]/80 px-6 py-4 backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#DFD0B8]/70">Dashboard</p>
-                <h1 className="text-xl font-semibold">{agentId || 'Agent'}</h1>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#948979] text-lg font-semibold text-[#222831]">
+                  A
+                </div>
+                <div>
+                  <p className="text-sm text-[#DFD0B8]/70">Agent Workspace</p>
+                  <h1 className="text-xl font-semibold">{agentId || 'Agent'}</h1>
+                </div>
               </div>
-              <div className="rounded-full border border-[#948979]/30 bg-[#948979]/10 px-4 py-2 text-sm text-[#DFD0B8]">
-                Live Workspace
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="rounded-full border border-[#948979]/30 bg-[#948979]/10 px-4 py-2 text-sm text-[#DFD0B8]">
+                  Active Status
+                </div>
+                <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-300">
+                  Online
+                </div>
               </div>
             </div>
           </header>

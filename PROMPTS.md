@@ -91,3 +91,9 @@
    - Badge
    - Loading Spinner
    Keep styling consistent with the project theme.
+
+8. Build the dashboard navbar.
+    Include:
+    - Agent Name
+    - Agent Status
+    - Theme-ready layout
