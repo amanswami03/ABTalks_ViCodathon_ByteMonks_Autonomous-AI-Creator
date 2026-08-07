@@ -112,3 +112,9 @@
     - Rationale
     - Sources
     Use mock data.
+11. Build the Topics section.
+    Display:
+    Accepted Topics
+    Rejected Topics
+    Reason for rejection
+    Use mock data.

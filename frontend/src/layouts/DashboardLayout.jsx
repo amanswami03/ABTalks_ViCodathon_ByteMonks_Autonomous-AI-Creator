@@ -203,6 +203,41 @@ export default function DashboardLayout() {
                     </div>
                   ))}
                 </div>
+              ) : activeSection === 'Topics' ? (
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-[#DFD0B8]">Accepted Topics</h3>
+                      <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-300">
+                        4 selected
+                      </span>
+                    </div>
+                    <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Product strategy for launch planning</li>
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Customer pain points and messaging</li>
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Automation opportunities in workflows</li>
+                    </ul>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-[#DFD0B8]">Rejected Topics</h3>
+                      <span className="rounded-full border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-sm text-rose-300">
+                        2 skipped
+                      </span>
+                    </div>
+                    <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
+                        <div className="font-medium text-[#DFD0B8]">Broad trend speculation</div>
+                        <p className="mt-2 text-xs leading-6 text-[#DFD0B8]/70">Reason for rejection: Too vague for a focused agent workflow.</p>
+                      </li>
+                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
+                        <div className="font-medium text-[#DFD0B8]">Unrelated competitor noise</div>
+                        <p className="mt-2 text-xs leading-6 text-[#DFD0B8]/70">Reason for rejection: Low signal value and limited actionability.</p>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               ) : (
                 <p className="max-w-2xl text-base leading-8 text-[#DFD0B8]/80">{activeContent.description}</p>
               )}
