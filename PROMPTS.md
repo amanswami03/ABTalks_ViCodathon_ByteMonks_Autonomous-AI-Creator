@@ -35,4 +35,35 @@
     - verify the app runs successfully
     - add this exact prompt under my section in PROMPTS.md using the next prompt number
 
+3. PROMPTS.md Logging Policy
 
+    This policy applies to every future task unless I explicitly disable it.
+
+    - Before implementing any task that results in meaningful code changes, automatically log my EXACT prompt in PROMPTS.md.
+    - Append it only under "## Mohit Sharma (Frontend)".
+    - Automatically determine the next sequential prompt number.
+    - Never modify, renumber, or delete previous prompt entries.
+    - Never modify my teammate's section.
+    - Do not log prompts that are only questions, discussions, or planning conversations.
+
+4. Configure React Router for the application.
+
+    Create only two pages:
+    - Landing
+    - Dashboard
+    Dashboard should accept :agentId.
+    Keep routing clean and simple.
+
+    Theme
+    Background- #222831
+    Surface- #393E46
+    Primary-#948979
+    Text- #DFD0B8
+
+    Design Style
+    - Modern SaaS
+    - Minimal
+    - Dark Theme
+    - Rounded Corners
+    - Smooth Animations
+    - Desktop First
