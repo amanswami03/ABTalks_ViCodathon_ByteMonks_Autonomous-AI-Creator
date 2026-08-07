@@ -83,3 +83,11 @@
     - Main Content Area
     Use React Router Outlet.
     Only build the layout.
+
+7. Create reusable UI components:
+   - Button
+   - Card
+   - Input
+   - Badge
+   - Loading Spinner
+   Keep styling consistent with the project theme.
