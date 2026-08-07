@@ -123,3 +123,6 @@
     - Interests
     - Recent Topics
     Use mock data.
+13. Build the Analytics section.
+    Display statistics returned by the backend.
+    Use mock data.

@@ -258,6 +258,32 @@ export default function DashboardLayout() {
                     </ul>
                   </div>
                 </div>
+              ) : activeSection === 'Analytics' ? (
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <p className="text-sm uppercase tracking-[0.3em] text-[#948979]">Total Activity</p>
+                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">1,248</p>
+                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Mock backend metric for the current agent lifecycle.</p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <p className="text-sm uppercase tracking-[0.3em] text-[#948979]">Engagement</p>
+                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">87%</p>
+                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Average interaction quality based on mock responses.</p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <p className="text-sm uppercase tracking-[0.3em] text-[#948979]">Response Speed</p>
+                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">1.8s</p>
+                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Average completion time for queued actions.</p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <p className="text-sm uppercase tracking-[0.3em] text-[#948979]">Coverage</p>
+                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">94%</p>
+                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Topic coverage across the active knowledge set.</p>
+                  </div>
+                </div>
               ) : (
                 <p className="max-w-2xl text-base leading-8 text-[#DFD0B8]/80">{activeContent.description}</p>
               )}
