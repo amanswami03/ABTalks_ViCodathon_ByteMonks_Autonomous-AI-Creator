@@ -63,7 +63,7 @@ func (c *Client) Ask(systemPrompt, userPrompt string) (string, error) {
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", grokAPIURL, bytes.NewBuffer(payload))
+	req, err := http.NewRequest("POST", groqAPIURL, bytes.NewBuffer(payload))
 	if err != nil {
 		return "", fmt.Errorf("build request: %w", err)
 	}
