@@ -16,11 +16,13 @@ Go backend for the Abtalks "Autonomous AI Creator" hackathon challenge.
 cp .env.example .env
 # paste your Grok API key into .env
 
-go mod init ai-persona-agent   # if go.mod isn't already resolved
-go get github.com/google/uuid
-go mod tidy
+# Install and start PostgreSQL with Homebrew (macOS)
+brew install postgresql
+./setup-postgres.sh
 
-go run cmd/server/main.go
+# From the backend directory
+go mod tidy
+go run ./cmd/server
 ```
 
 Test locally:
