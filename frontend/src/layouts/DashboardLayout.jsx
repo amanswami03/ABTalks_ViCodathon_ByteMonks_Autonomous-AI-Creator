@@ -64,6 +64,7 @@ export default function DashboardLayout() {
   const [isLoadingFeed, setIsLoadingFeed] = useState(true);
   const [feedError, setFeedError] = useState('');
   const [activity, setActivity] = useState(null);
+  const [agentDetails, setAgentDetails] = useState(null);
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
   const [activityError, setActivityError] = useState('');
   const [logs, setLogs] = useState([]);
@@ -142,6 +143,17 @@ export default function DashboardLayout() {
       }
     };
 
+    const loadDetails = async () => {
+      try {
+        const response = await getAgentDetails(agentId);
+        if (isMounted) {
+          setAgentDetails(response || null);
+        }
+      } catch (err) {
+        if (isMounted) setAgentDetails(null);
+      }
+    };
+
     const loadLogs = async () => {
       setIsLoadingLogs(true);
 
@@ -165,10 +177,12 @@ export default function DashboardLayout() {
 
     loadFeed();
     loadActivity();
+    loadDetails();
     loadLogs();
     const interval = window.setInterval(() => {
       loadFeed();
       loadActivity();
+      loadDetails();
       loadLogs();
     }, 5000);
 
@@ -243,11 +257,14 @@ export default function DashboardLayout() {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#948979] text-lg font-semibold text-[#222831]">
-                  A
+                  {(agentDetails && agentDetails.name && agentDetails.name[0]) || (agentId ? agentId[0] : 'A')}
                 </div>
                 <div>
                   <p className="text-sm text-[#DFD0B8]/70">Agent Workspace</p>
-                  <h1 className="text-xl font-semibold">{agentId || 'Agent'}</h1>
+                  <h1 className="text-xl font-semibold">{(agentDetails && agentDetails.name) || agentId || 'Agent'}</h1>
+                  {agentDetails?.domain ? (
+                    <p className="text-xs text-[#DFD0B8]/60">{agentDetails.domain}</p>
+                  ) : null}
                 </div>
               </div>
 

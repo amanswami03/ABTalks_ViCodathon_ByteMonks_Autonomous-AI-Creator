@@ -36,4 +36,9 @@ export const getAgentLogs = async (agentId) => {
   return response.data;
 };
 
+export const getAgentDetails = async (agentId) => {
+  const response = await api.get(`/agent/${agentId}`);
+  return response.data;
+};
+
 export default api;
