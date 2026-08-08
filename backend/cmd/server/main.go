@@ -16,6 +16,7 @@ func main() {
 	h := api.NewHandlers(s, client)
 
 	mux := http.NewServeMux()
+	mux.Handle("/api/agent/", h)
 	mux.HandleFunc("/api/agent/init", h.Init)
 	mux.HandleFunc("/api/agent/feed", h.Feed)
 

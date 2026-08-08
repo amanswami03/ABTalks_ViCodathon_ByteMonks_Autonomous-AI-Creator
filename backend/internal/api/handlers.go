@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -102,6 +103,165 @@ func (h *Handlers) Feed(w http.ResponseWriter, r *http.Request) {
 		posts = []models.Post{}
 	}
 	writeJSON(w, http.StatusOK, feedResponse{Posts: posts})
+}
+
+func (h *Handlers) AgentDetails(w http.ResponseWriter, r *http.Request) {
+	agentID := strings.TrimPrefix(r.URL.Path, "/api/agent/")
+	if agentID == "" || agentID == "init" || agentID == "feed" {
+		http.Error(w, "agent id required", http.StatusBadRequest)
+		return
+	}
+
+	a, ok := h.Store.GetAgent(agentID)
+	if !ok {
+		http.Error(w, "agent not found", http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"id":        a.ID,
+		"name":      a.Persona.Name,
+		"domain":    a.Persona.Domain,
+		"status":    "ACTIVE",
+		"createdAt": time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+func (h *Handlers) AgentActivity(w http.ResponseWriter, r *http.Request) {
+	agentID := strings.TrimPrefix(r.URL.Path, "/api/agent/")
+	agentID = strings.TrimSuffix(agentID, "/activity")
+	if agentID == "" {
+		http.Error(w, "agent id required", http.StatusBadRequest)
+		return
+	}
+
+	_, ok := h.Store.GetAgent(agentID)
+	if !ok {
+		http.Error(w, "agent not found", http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status":      "Searching",
+		"currentTask": "Reading live sources",
+		"progress":    65,
+	})
+}
+
+func (h *Handlers) AgentTopics(w http.ResponseWriter, r *http.Request) {
+	agentID := strings.TrimPrefix(r.URL.Path, "/api/agent/")
+	agentID = strings.TrimSuffix(agentID, "/topics")
+	if agentID == "" {
+		http.Error(w, "agent id required", http.StatusBadRequest)
+		return
+	}
+
+	_, ok := h.Store.GetAgent(agentID)
+	if !ok {
+		http.Error(w, "agent not found", http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"accepted": []map[string]interface{}{},
+		"rejected": []map[string]interface{}{},
+	})
+}
+
+func (h *Handlers) AgentMemory(w http.ResponseWriter, r *http.Request) {
+	agentID := strings.TrimPrefix(r.URL.Path, "/api/agent/")
+	agentID = strings.TrimSuffix(agentID, "/memory")
+	if agentID == "" {
+		http.Error(w, "agent id required", http.StatusBadRequest)
+		return
+	}
+
+	_, ok := h.Store.GetAgent(agentID)
+	if !ok {
+		http.Error(w, "agent not found", http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"interests":     []string{"Prompt Injection", "MCP", "AI Security"},
+		"recentTopics":  []string{"Claude", "Gemini", "OpenAI"},
+	})
+}
+
+func (h *Handlers) AgentStats(w http.ResponseWriter, r *http.Request) {
+	agentID := strings.TrimPrefix(r.URL.Path, "/api/agent/")
+	agentID = strings.TrimSuffix(agentID, "/stats")
+	if agentID == "" {
+		http.Error(w, "agent id required", http.StatusBadRequest)
+		return
+	}
+
+	a, ok := h.Store.GetAgent(agentID)
+	if !ok {
+		http.Error(w, "agent not found", http.StatusNotFound)
+		return
+	}
+
+	sourceCount := 0
+	for _, post := range a.Posts {
+		sourceCount += len(post.Sources)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"published":      len(a.Posts),
+		"rejected":       0,
+		"memoryNodes":    len(a.Posts) + 3,
+		"sources":        sourceCount,
+	})
+}
+
+func (h *Handlers) AgentLogs(w http.ResponseWriter, r *http.Request) {
+	agentID := strings.TrimPrefix(r.URL.Path, "/api/agent/")
+	agentID = strings.TrimSuffix(agentID, "/logs")
+	if agentID == "" {
+		http.Error(w, "agent id required", http.StatusBadRequest)
+		return
+	}
+
+	_, ok := h.Store.GetAgent(agentID)
+	if !ok {
+		http.Error(w, "agent not found", http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, []map[string]string{{"time": "10:45", "action": "Initializing agent"}})
+}
+
+func (h *Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost && r.URL.Path == "/api/agent/init" {
+		h.Init(w, r)
+		return
+	}
+	if r.Method == http.MethodGet && r.URL.Path == "/api/agent/feed" {
+		h.Feed(w, r)
+		return
+	}
+
+	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/api/agent/") {
+		suffix := strings.TrimPrefix(r.URL.Path, "/api/agent/")
+		switch {
+		case strings.HasSuffix(suffix, "/activity"):
+			h.AgentActivity(w, r)
+		case strings.HasSuffix(suffix, "/topics"):
+			h.AgentTopics(w, r)
+		case strings.HasSuffix(suffix, "/memory"):
+			h.AgentMemory(w, r)
+		case strings.HasSuffix(suffix, "/stats"):
+			h.AgentStats(w, r)
+		case strings.HasSuffix(suffix, "/logs"):
+			h.AgentLogs(w, r)
+		default:
+			h.AgentDetails(w, r)
+		}
+		return
+	}
+
+	http.NotFound(w, r)
 }
 
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {
