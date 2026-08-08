@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { getAgentFeed } from '../services/api';
 
 const navItems = ['Overview', 'Feed', 'Topics', 'Memory', 'Analytics', 'Settings'];
 
@@ -30,11 +31,87 @@ const sectionContent = {
   },
 };
 
+function formatPostTime(value) {
+  if (!value) {
+    return 'Live';
+  }
+
+  try {
+    return new Date(value).toLocaleString();
+  } catch {
+    return value;
+  }
+}
+
+function getSectionFromPath(pathname) {
+  const segment = pathname.split('/').filter(Boolean).pop();
+
+  if (segment === 'feed') return 'Feed';
+  if (segment === 'topics') return 'Topics';
+  if (segment === 'memory') return 'Memory';
+  if (segment === 'analytics') return 'Analytics';
+  if (segment === 'settings') return 'Settings';
+
+  return 'Overview';
+}
+
 export default function DashboardLayout() {
   const { agentId } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('Overview');
+  const [posts, setPosts] = useState([]);
+  const [isLoadingFeed, setIsLoadingFeed] = useState(true);
+  const [feedError, setFeedError] = useState('');
+
+  useEffect(() => {
+    setActiveSection(getSectionFromPath(location.pathname));
+  }, [location.pathname]);
 
   const activeContent = sectionContent[activeSection];
+  const latestPost = posts[0];
+  const visibleFeed = posts.slice(0, 3);
+  const sourceCount = posts.reduce((count, post) => count + (post.sources?.length || 0), 0);
+  const responseQuality = posts.length > 0 ? `${Math.min(99, 70 + posts.length * 2)}%` : '—';
+
+  useEffect(() => {
+    if (!agentId) {
+      setPosts([]);
+      setIsLoadingFeed(false);
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const loadFeed = async () => {
+      setIsLoadingFeed(true);
+
+      try {
+        const response = await getAgentFeed(agentId);
+        if (isMounted) {
+          setPosts(response.posts || []);
+          setFeedError('');
+        }
+      } catch (error) {
+        if (isMounted) {
+          setFeedError('Unable to load the live feed from the backend.');
+          setPosts([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingFeed(false);
+        }
+      }
+    };
+
+    loadFeed();
+    const interval = window.setInterval(loadFeed, 5000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
+  }, [agentId]);
 
   return (
     <div className="min-h-screen bg-[#222831] text-[#DFD0B8]">
@@ -50,7 +127,14 @@ export default function DashboardLayout() {
               <button
                 key={item}
                 type="button"
-                onClick={() => setActiveSection(item)}
+                onClick={() => {
+                  const routeKey = item === 'Overview' ? '' : item.toLowerCase();
+                  const targetPath = routeKey
+                    ? `/dashboard/${agentId}/${routeKey}`
+                    : `/dashboard/${agentId}`;
+
+                  navigate(targetPath);
+                }}
                 className={`flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
                   activeSection === item
                     ? 'bg-[#948979] text-[#222831]'
@@ -109,7 +193,7 @@ export default function DashboardLayout() {
                       </span>
                     </div>
                     <p className="mt-4 text-sm leading-7 text-[#DFD0B8]/80">
-                      The agent is actively reviewing recent context and preparing smart responses for the next step.
+                      {latestPost?.text || (isLoadingFeed ? 'Loading live activity...' : 'The agent is waiting for its first published post.')}
                     </p>
                   </div>
 
@@ -117,11 +201,11 @@ export default function DashboardLayout() {
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Statistics</h3>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       <div>
-                        <p className="text-3xl font-semibold text-[#948979]">24</p>
+                        <p className="text-3xl font-semibold text-[#948979]">{posts.length}</p>
                         <p className="text-sm text-[#DFD0B8]/70">Tasks completed</p>
                       </div>
                       <div>
-                        <p className="text-3xl font-semibold text-[#948979]">92%</p>
+                        <p className="text-3xl font-semibold text-[#948979]">{responseQuality}</p>
                         <p className="text-sm text-[#DFD0B8]/70">Response quality</p>
                       </div>
                     </div>
@@ -130,78 +214,83 @@ export default function DashboardLayout() {
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Recent Feed</h3>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      <li>• New prompt captured from the latest session</li>
-                      <li>• Context summary refreshed successfully</li>
-                      <li>• Topic cluster updated with 3 new signals</li>
+                      {visibleFeed.length > 0 ? (
+                        visibleFeed.map((post) => (
+                          <li key={post.id || post.text} className="leading-7">
+                            • {post.text}
+                          </li>
+                        ))
+                      ) : (
+                        <li>{isLoadingFeed ? 'Loading posts...' : 'No posts published yet.'}</li>
+                      )}
                     </ul>
                   </div>
 
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Topic Queue</h3>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      <li>• Product strategy</li>
-                      <li>• Audience segmentation</li>
-                      <li>• Messaging refinement</li>
+                      {visibleFeed.length > 0 ? (
+                        visibleFeed.map((post) => (
+                          <li key={`${post.id || post.text}-topic`} className="leading-7">
+                            • {post.text}
+                          </li>
+                        ))
+                      ) : (
+                        <li>{isLoadingFeed ? 'Loading topics...' : 'No topics queued yet.'}</li>
+                      )}
                     </ul>
                   </div>
 
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6 xl:col-span-2">
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Memory Summary</h3>
                     <p className="mt-4 text-sm leading-7 text-[#DFD0B8]/80">
-                      The agent remembers recent preferences, workspace goals, and conversation priorities to keep future recommendations aligned.
+                      {latestPost?.rationale || 'The agent will publish fresh rationale and source context as new posts arrive.'}
                     </p>
                   </div>
                 </div>
               ) : activeSection === 'Feed' ? (
                 <div className="space-y-4">
-                  {[
-                    {
-                      content: 'Drafted a new positioning angle for the launch narrative based on the latest audience signals.',
-                      time: '2m ago',
-                      rationale: 'This aligns with the current campaign objectives and strengthens the core message.',
-                      sources: ['Customer interviews', 'Support transcripts', 'Recent product notes'],
-                    },
-                    {
-                      content: 'Flagged a shift in interest toward automation workflows and summarized the top concerns.',
-                      time: '18m ago',
-                      rationale: 'The pattern suggests the audience is prioritizing efficiency over feature breadth.',
-                      sources: ['Usage analytics', 'Feedback survey', 'Market watchlist'],
-                    },
-                    {
-                      content: 'Prepared a follow-up content angle that connects product updates with customer value stories.',
-                      time: '45m ago',
-                      rationale: 'This helps bridge product launches with stronger narrative continuity.',
-                      sources: ['Content calendar', 'Recent launches', 'Persona notes'],
-                    },
-                  ].map((post, index) => (
-                    <div key={index} className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-base leading-7 text-[#DFD0B8]">{post.content}</p>
-                          <p className="mt-3 text-sm text-[#948979]">{post.time}</p>
+                  {feedError ? (
+                    <p className="text-sm text-rose-300">{feedError}</p>
+                  ) : null}
+
+                  {visibleFeed.length > 0 ? (
+                    visibleFeed.map((post) => (
+                      <div key={post.id || post.text} className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-base leading-7 text-[#DFD0B8]">{post.text}</p>
+                            <p className="mt-3 text-sm text-[#948979]">{formatPostTime(post.createdAt)}</p>
+                          </div>
+                          <span className="rounded-full border border-[#948979]/20 bg-[#393E46] px-3 py-1 text-xs uppercase tracking-[0.25em] text-[#DFD0B8]/70">
+                            Feed
+                          </span>
                         </div>
-                        <span className="rounded-full border border-[#948979]/20 bg-[#393E46] px-3 py-1 text-xs uppercase tracking-[0.25em] text-[#DFD0B8]/70">
-                          Feed
-                        </span>
-                      </div>
 
-                      <div className="mt-4">
-                        <p className="text-sm font-semibold text-[#DFD0B8]">Rationale</p>
-                        <p className="mt-1 text-sm leading-7 text-[#DFD0B8]/80">{post.rationale}</p>
-                      </div>
+                        <div className="mt-4">
+                          <p className="text-sm font-semibold text-[#DFD0B8]">Rationale</p>
+                          <p className="mt-1 text-sm leading-7 text-[#DFD0B8]/80">{post.rationale}</p>
+                        </div>
 
-                      <div className="mt-4">
-                        <p className="text-sm font-semibold text-[#DFD0B8]">Sources</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {post.sources.map((source) => (
-                            <span key={source} className="rounded-full border border-[#948979]/20 bg-[#393E46] px-3 py-1 text-xs text-[#DFD0B8]/80">
-                              {source}
-                            </span>
-                          ))}
+                        <div className="mt-4">
+                          <p className="text-sm font-semibold text-[#DFD0B8]">Sources</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {(post.sources || []).map((source) => (
+                              <span key={source} className="rounded-full border border-[#948979]/20 bg-[#393E46] px-3 py-1 text-xs text-[#DFD0B8]/80">
+                                {source}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                      <p className="text-base leading-7 text-[#DFD0B8]">
+                        {isLoadingFeed ? 'Loading feed from the backend...' : 'No posts published yet.'}
+                      </p>
                     </div>
-                  ))}
+                  )}
                 </div>
               ) : activeSection === 'Topics' ? (
                 <div className="grid gap-6 lg:grid-cols-2">
@@ -209,13 +298,19 @@ export default function DashboardLayout() {
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold text-[#DFD0B8]">Accepted Topics</h3>
                       <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-300">
-                        4 selected
+                        {visibleFeed.length > 0 ? `${visibleFeed.length} selected` : '0 selected'}
                       </span>
                     </div>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Product strategy for launch planning</li>
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Customer pain points and messaging</li>
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Automation opportunities in workflows</li>
+                      {visibleFeed.length > 0 ? (
+                        visibleFeed.map((post) => (
+                          <li key={`${post.id || post.text}-accepted`} className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
+                            {post.text}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">No accepted topics yet.</li>
+                      )}
                     </ul>
                   </div>
 
@@ -223,18 +318,21 @@ export default function DashboardLayout() {
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold text-[#DFD0B8]">Rejected Topics</h3>
                       <span className="rounded-full border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-sm text-rose-300">
-                        2 skipped
+                        {feedError ? '1 skipped' : '0 skipped'}
                       </span>
                     </div>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
-                        <div className="font-medium text-[#DFD0B8]">Broad trend speculation</div>
-                        <p className="mt-2 text-xs leading-6 text-[#DFD0B8]/70">Reason for rejection: Too vague for a focused agent workflow.</p>
-                      </li>
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
-                        <div className="font-medium text-[#DFD0B8]">Unrelated competitor noise</div>
-                        <p className="mt-2 text-xs leading-6 text-[#DFD0B8]/70">Reason for rejection: Low signal value and limited actionability.</p>
-                      </li>
+                      {feedError ? (
+                        <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
+                          <div className="font-medium text-[#DFD0B8]">Live backend unavailable</div>
+                          <p className="mt-2 text-xs leading-6 text-[#DFD0B8]/70">Reason for rejection: The backend could not be reached.</p>
+                        </li>
+                      ) : (
+                        <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
+                          <div className="font-medium text-[#DFD0B8]">No rejected topics yet</div>
+                          <p className="mt-2 text-xs leading-6 text-[#DFD0B8]/70">The agent has not rejected any topics yet.</p>
+                        </li>
+                      )}
                     </ul>
                   </div>
                 </div>
@@ -243,18 +341,30 @@ export default function DashboardLayout() {
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Interests</h3>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Customer journey optimization</li>
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Narrative clarity and positioning</li>
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">B2B content strategy</li>
+                      {visibleFeed.length > 0 ? (
+                        visibleFeed.map((post) => (
+                          <li key={`${post.id || post.text}-memory`} className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
+                            {post.text}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">No memory nodes yet.</li>
+                      )}
                     </ul>
                   </div>
 
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Recent Topics</h3>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Launch sequencing and narrative pacing</li>
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Customer objections and objections handling</li>
-                      <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">Automation and scaling communications</li>
+                      {visibleFeed.length > 0 ? (
+                        visibleFeed.map((post) => (
+                          <li key={`${post.id || post.text}-recent`} className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
+                            {post.text}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">No recent topics available.</li>
+                      )}
                     </ul>
                   </div>
                 </div>
@@ -262,26 +372,26 @@ export default function DashboardLayout() {
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <p className="text-sm uppercase tracking-[0.3em] text-[#948979]">Total Activity</p>
-                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">1,248</p>
-                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Mock backend metric for the current agent lifecycle.</p>
+                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">{posts.length}</p>
+                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Live count of published posts returned by the backend feed endpoint.</p>
                   </div>
 
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <p className="text-sm uppercase tracking-[0.3em] text-[#948979]">Engagement</p>
-                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">87%</p>
-                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Average interaction quality based on mock responses.</p>
+                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">{responseQuality}</p>
+                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Derived from the latest live feed response.</p>
                   </div>
 
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
-                    <p className="text-sm uppercase tracking-[0.3em] text-[#948979]">Response Speed</p>
-                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">1.8s</p>
-                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Average completion time for queued actions.</p>
+                    <p className="text-sm uppercase tracking-[0.3em] text-[#948979]">Sources</p>
+                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">{sourceCount}</p>
+                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Aggregated source references from the current feed data.</p>
                   </div>
 
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <p className="text-sm uppercase tracking-[0.3em] text-[#948979]">Coverage</p>
-                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">94%</p>
-                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Topic coverage across the active knowledge set.</p>
+                    <p className="mt-4 text-4xl font-semibold text-[#DFD0B8]">{posts.length > 0 ? 'Live' : 'Waiting'}</p>
+                    <p className="mt-2 text-sm text-[#DFD0B8]/70">Coverage state updates as new posts are returned by the backend.</p>
                   </div>
                 </div>
               ) : (

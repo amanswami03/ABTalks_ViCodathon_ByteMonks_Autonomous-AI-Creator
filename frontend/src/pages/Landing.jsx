@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { initializeAgent } from '../services/api';
 
 const domains = ['Product Strategy', 'Marketing', 'Research', 'Operations'];
 
@@ -7,9 +8,10 @@ export default function Landing() {
   const [personaName, setPersonaName] = useState('');
   const [domain, setDomain] = useState(domains[0]);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!personaName.trim()) {
@@ -17,11 +19,19 @@ export default function Landing() {
     }
 
     setIsInitializing(true);
+    setErrorMessage('');
 
-    window.setTimeout(() => {
-      const slug = personaName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      navigate(`/dashboard/${slug}`);
-    }, 600);
+    try {
+      const response = await initializeAgent({
+        name: personaName.trim(),
+        domain,
+      });
+
+      navigate(`/dashboard/${response.agentId}`);
+    } catch (error) {
+      setErrorMessage('Unable to initialize the agent right now. Please try again.');
+      setIsInitializing(false);
+    }
   };
 
   return (
@@ -79,6 +89,10 @@ export default function Landing() {
           >
             {isInitializing ? 'Initializing...' : 'Initialize Agent'}
           </button>
+
+          {errorMessage ? (
+            <p className="text-sm text-rose-300">{errorMessage}</p>
+          ) : null}
         </form>
       </section>
     </main>

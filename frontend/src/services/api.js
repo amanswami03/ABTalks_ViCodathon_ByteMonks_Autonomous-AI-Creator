@@ -1,0 +1,29 @@
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+export const initializeAgent = async ({ name, domain }) => {
+  const response = await api.post('/agent/init', {
+    persona: {
+      name,
+      domain,
+    },
+  });
+
+  return response.data;
+};
+
+export const getAgentFeed = async (agentId) => {
+  const response = await api.get('/agent/feed', {
+    params: { agentId },
+  });
+
+  return response.data;
+};
+
+export default api;

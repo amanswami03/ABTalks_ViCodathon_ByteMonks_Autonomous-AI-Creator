@@ -126,3 +126,6 @@
 13. Build the Analytics section.
     Display statistics returned by the backend.
     Use mock data.
+14. Replace mock data with API calls using Axios.
+    Use the API contract.
+    Keep the UI unchanged.
