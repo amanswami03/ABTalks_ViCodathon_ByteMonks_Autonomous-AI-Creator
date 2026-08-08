@@ -1,5 +1,84 @@
 ## Aman Swami (Backend)
 
+1. Create an autonomous AI persona that can be initialized once and then continue operating without further human input.
+
+2. Implement `POST /api/agent/init` so the frontend can send a persona payload and receive a stable `agentId` in response.
+
+3. Implement `GET /api/agent/feed?agentId=...` so the frontend can retrieve a live list of published posts for the agent.
+
+4. Build topic discovery logic that pulls from live sources and presents only the most compelling candidates to the agent.
+
+5. Give the agent a strong editorial voice, clear domain focus, and a persona that remains consistent across published posts.
+
+6. Make the agent remember what it has already published, so it avoids repeating the same ideas or recycled topic summaries.
+
+7. Add a scheduler that publishes new posts gradually over time, instead of publishing all content at once.
+
+8. Attach rationale, relevance, and source details to every published post so the output is explainable and traceable.
+
+9. Store all agent state in PostgreSQL so published posts, persona metadata, and seen topics survive restarts.
+
+10. Create frontend-friendly dashboard endpoints for agent details, activity, topics, memory, analytics, and logs.
+
+11. Ensure response payloads follow a consistent JSON contract and always use ISO 8601 timestamps for dates.
+
+12. Validate the `agentId` parameter on every request and return a clear error if it is missing or invalid.
+
+13. Return `success: true` or `success: false` where appropriate to keep the API responses predictable.
+
+14. Keep the agent’s `name` and `domain` stored in the backend so the frontend can show persona metadata in the UI.
+
+15. Use consistent field names across all endpoints so the frontend does not need special-case response parsing.
+
+16. Guarantee the feed returns an empty array rather than `null` when no posts exist yet.
+
+17. Persist `seenTopicIDs` so the agent does not re-evaluate the same topic more than once.
+
+18. Use a simple backend entity model with Agent, Persona, Post, Topic, and memory state.
+
+19. Provide a startup path that works even if PostgreSQL is temporarily unavailable, with an in-memory fallback during development.
+
+20. Always include a source URL in each post’s `sources` array, even if it is a placeholder from the discovery pipeline.
+
+21. Return agent activity metadata such as `ACTIVE`, `Searching`, `Online`, and the current task progress.
+
+22. Keep the backend API contract aligned with React dashboard routes so the frontend can integrate smoothly.
+
+23. Ensure the scheduler starts immediately after agent initialization and runs on a repeat interval.
+
+24. Keep the init endpoint fast so the frontend receives the ID immediately while the agent continues its work asynchronously.
+
+25. Allow the frontend to poll live feed updates every few seconds without overloading the backend.
+
+26. Keep the database schema minimal and reliable so the system is easy to maintain during the hackathon.
+
+27. Provide a fallback in-memory state path if the database schema cannot load or the connection fails.
+
+28. Add regression tests that verify API responses, endpoint shapes, and required contract fields.
+
+29. Return `createdAt` timestamps in RFC3339 / ISO 8601 format for all posts and metadata.
+
+30. Keep error responses clear, with helpful messages for missing parameters and invalid IDs.
+
+31. Design initialization to be idempotent enough that repeated client retries do not create duplicate agents.
+
+32. Make the feed endpoint the canonical source of truth for all published post data.
+
+33. Keep the backend routes simple and easy to route from the React frontend.
+
+34. Give every post a unique ID and preserve that ID in the feed output.
+
+35. Provide a topic queue endpoint that can show accepted/rejected subjects, even before publishing begins.
+
+36. Keep the agent publishing flow transparent by returning rationale and sources in every feed item.
+
+37. Document the backend setup, how to run the server locally, and how to start the frontend in `backend/README.md`.
+
+38. Keep the agent’s editorial standard strict: no fluff, no recycled takes, and no weak topic choices.
+
+39. Make the backend able to store agent memory and retrieve it through a dedicated memory endpoint.
+
+40. Keep the API endpoints robust enough for both development and the hackathon evaluator.
 
 
 
