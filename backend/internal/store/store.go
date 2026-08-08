@@ -38,10 +38,11 @@ func NewWithConnectionString(connStr string) *Store {
 		panic(fmt.Sprintf("open postgres store: %v", err))
 	}
 	if err := db.Ping(); err != nil {
-		if os.Getenv("SKIP_DB_PING") == "1" {
+		if os.Getenv("SKIP_DB_PING") == "1" || os.Getenv("USE_MEMORY_STORE") == "1" {
 			return &Store{db: nil, agents: make(map[string]*models.Agent)}
 		}
-		panic(fmt.Sprintf("ping postgres store: %v", err))
+		fmt.Fprintf(os.Stderr, "postgres unavailable, falling back to in-memory store: %v\n", err)
+		return &Store{db: nil, agents: make(map[string]*models.Agent)}
 	}
 
 	if _, err := db.Exec(`
@@ -108,6 +109,7 @@ func (s *Store) AddPost(agentID string, post models.Post) {
 		if _, err := s.db.Exec(`
 			INSERT INTO posts (id, agent_id, created_at, text, rationale, sources)
 			VALUES ($1, $2, $3, $4, $5, $6)
+			ON CONFLICT (id) DO NOTHING
 		`, post.ID, agentID, post.CreatedAt, post.Text, post.Rationale, mustJSON(post.Sources)); err != nil {
 			panic(fmt.Sprintf("add post: %v", err))
 		}
