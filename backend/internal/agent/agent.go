@@ -42,10 +42,52 @@ func RunCycle(client *llm.Client, s *store.Store, agentID string) error {
 
 	candidates, err := topics.FetchTopics(10, agentObj.Persona.Domain)
 	if err != nil {
+		s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "error", Details: fmt.Sprintf("fetch topics failed: %v", err)})
 		return fmt.Errorf("fetch topics: %w", err)
+	}
+	if len(candidates) == 0 {
+		s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "idle", Details: "No candidate topics returned"})
 	}
 
 	for _, t := range candidates {
+		if s.HasSeenTopic(agentID, t.ID) {
+			s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "skip", Details: fmt.Sprintf("Already seen topic %s", t.Title)})
+			continue // memory: don't reconsider the same topic
+		}
+		s.MarkTopicSeen(agentID, t.ID)
+
+		d, err := judgeTopic(client, agentObj, t)
+		if err != nil {
+			s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "error", Details: fmt.Sprintf("judge topic failed: %v", err)})
+			continue // log and move on in production
+		}
+		if d.Action != "publish" {
+			s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "rejected", Details: fmt.Sprintf("Topic %q skipped: %s", t.Title, d.Reason)})
+			continue // editorial judgment: intentionally rejected
+		}
+
+		post, err := writePost(client, agentObj, t, d.Reason)
+		if err != nil {
+			s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "error", Details: fmt.Sprintf("write post failed: %v", err)})
+			continue
+		}
+
+		s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "approve", Details: fmt.Sprintf("Approved topic %q", t.Title)})
+	
+		s.AddPost(agentID, models.Post{
+			ID:        uuid.NewString(),
+			CreatedAt: time.Now().UTC(),
+			Text:      post.Text,
+			Rationale: post.Rationale,
+			Sources:   []string{t.URL},
+		})
+
+		// One publish per cycle keeps a natural pace across the 48h window.
+		break
+	}
+
+	return nil
+}
 		if s.HasSeenTopic(agentID, t.ID) {
 			continue // memory: don't reconsider the same topic
 		}
@@ -106,7 +148,8 @@ Respond with ONLY valid JSON, no other text:
 
 	var d decision
 	clean := strings.TrimSpace(raw)
-	if err := json.Unmarshal([]byte(clean), &d); err != nil {
+	jsonText := extractJSON(clean)
+	if err := json.Unmarshal([]byte(jsonText), &d); err != nil {
 		return nil, fmt.Errorf("parsing decision json: %w (raw: %s)", err, clean)
 	}
 	return &d, nil
@@ -160,4 +203,13 @@ func truncate(s string, n int) string {
 		return s
 	}
 	return s[:n] + "..."
+}
+
+func extractJSON(raw string) string {
+	start := strings.Index(raw, "{")
+	end := strings.LastIndex(raw, "}")
+	if start == -1 || end == -1 || end <= start {
+		return raw
+	}
+	return raw[start : end+1]
 }

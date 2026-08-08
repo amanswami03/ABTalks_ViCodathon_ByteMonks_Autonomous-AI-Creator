@@ -13,6 +13,9 @@ import (
 func main() {
 	s := store.New()
 	client := llm.NewClient()
+	if client.APIKey == "" {
+		log.Printf("warning: GROK_API_KEY is not set; backend will use local fallback responses instead of the Grok API")
+	}
 	h := api.NewHandlers(s, client)
 
 	mux := http.NewServeMux()

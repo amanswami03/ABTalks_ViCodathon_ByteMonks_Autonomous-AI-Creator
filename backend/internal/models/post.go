@@ -23,6 +23,12 @@ type Persona struct {
 }
 
 // Agent is the in-memory representation of one initialized persona.
+type LogEntry struct {
+	Time    time.Time `json:"time"`
+	Action  string    `json:"action"`
+	Details string    `json:"details"`
+}
+
 type Agent struct {
 	ID              string
 	Persona         Persona
@@ -32,6 +38,7 @@ type Agent struct {
 	LastPublishedAt time.Time
 	LastRunAt       time.Time
 	NextRunAt       time.Time
+	Logs            []LogEntry
 }
 
 // Topic is a raw candidate pulled from a live information source

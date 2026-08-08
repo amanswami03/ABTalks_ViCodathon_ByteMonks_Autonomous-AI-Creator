@@ -118,6 +118,7 @@ func (s *Store) AddPost(agentID string, post models.Post) {
 	if a, ok := s.agents[agentID]; ok {
 		a.Posts = append([]models.Post{post}, a.Posts...)
 		a.LastPublishedAt = post.CreatedAt
+		a.Logs = append([]models.LogEntry{{Time: time.Now().UTC(), Action: "published", Details: fmt.Sprintf("Published %q from %s", post.Text, post.Sources)}}, a.Logs...)
 	}
 }
 
@@ -128,6 +129,19 @@ func (s *Store) SetAgentLastRun(agentID string, lastRun, nextRun time.Time) {
 	if a, ok := s.agents[agentID]; ok {
 		a.LastRunAt = lastRun
 		a.NextRunAt = nextRun
+		a.Logs = append([]models.LogEntry{{Time: lastRun, Action: "scheduler", Details: fmt.Sprintf("Cycle started, next run at %s", nextRun.UTC().Format(time.RFC3339))}}, a.Logs...)
+	}
+}
+
+func (s *Store) AddLog(agentID string, entry models.LogEntry) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if a, ok := s.agents[agentID]; ok {
+		a.Logs = append([]models.LogEntry{entry}, a.Logs...)
+		if len(a.Logs) > 20 {
+			a.Logs = a.Logs[:20]
+		}
 	}
 }
 

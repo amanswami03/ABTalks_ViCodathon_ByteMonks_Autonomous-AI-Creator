@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { getAgentFeed, getAgentActivity } from '../services/api';
+import { getAgentFeed, getAgentActivity, getAgentLogs } from '../services/api';
 
 const navItems = ['Overview', 'Feed', 'Topics', 'Memory', 'Analytics', 'Settings'];
 
@@ -66,6 +66,9 @@ export default function DashboardLayout() {
   const [activity, setActivity] = useState(null);
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
   const [activityError, setActivityError] = useState('');
+  const [logs, setLogs] = useState([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [logsError, setLogsError] = useState('');
 
   useEffect(() => {
     setActiveSection(getSectionFromPath(location.pathname));
@@ -128,11 +131,34 @@ export default function DashboardLayout() {
       }
     };
 
+    const loadLogs = async () => {
+      setIsLoadingLogs(true);
+
+      try {
+        const response = await getAgentLogs(agentId);
+        if (isMounted) {
+          setLogs(response || []);
+          setLogsError('');
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLogsError('Unable to load agent logs.');
+          setLogs([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingLogs(false);
+        }
+      }
+    };
+
     loadFeed();
     loadActivity();
+    loadLogs();
     const interval = window.setInterval(() => {
       loadFeed();
       loadActivity();
+      loadLogs();
     }, 5000);
 
     return () => {
@@ -313,6 +339,30 @@ export default function DashboardLayout() {
                     <p className="mt-4 text-sm leading-7 text-[#DFD0B8]/80">
                       {latestPost?.rationale || 'The agent will publish fresh rationale and source context as new posts arrive.'}
                     </p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6 xl:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-[#DFD0B8]">Recent Log Activity</h3>
+                      <span className="text-sm text-[#DFD0B8]/70">{logs.length} entries</span>
+                    </div>
+                    <div className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
+                      {logsError ? (
+                        <p className="text-rose-300">{logsError}</p>
+                      ) : isLoadingLogs ? (
+                        <p>Loading logs...</p>
+                      ) : logs.length > 0 ? (
+                        logs.slice(0, 5).map((entry) => (
+                          <div key={entry.time} className="rounded-2xl border border-[#948979]/20 bg-[#393E46] p-4">
+                            <p className="font-semibold text-[#DFD0B8]">{entry.action}</p>
+                            <p className="mt-1 text-xs text-[#DFD0B8]/70">{new Date(entry.time).toLocaleString()}</p>
+                            <p className="mt-2 leading-6">{entry.details}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p>No log activity available yet.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : activeSection === 'Feed' ? (

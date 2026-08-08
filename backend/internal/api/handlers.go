@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -72,6 +73,12 @@ func (h *Handlers) Init(w http.ResponseWriter, r *http.Request) {
 		SeenTopicIDs: make(map[string]bool),
 	}
 	h.Store.CreateAgent(newAgent)
+
+	// Run one synchronous cycle at init so the feed can show a real post quickly.
+	if err := agent.RunCycle(h.Client, h.Store, agentID); err != nil {
+		// Log but continue; the scheduler will keep trying over time.
+		log.Printf("[agent %s] initial run cycle error: %v", agentID, err)
+	}
 
 	// Start the autonomous publish loop immediately after initialization.
 	// A shorter interval helps the agent generate live content within the 48h evaluation window.
@@ -236,13 +243,17 @@ func (h *Handlers) AgentLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, ok := h.Store.GetAgent(agentID)
+	a, ok := h.Store.GetAgent(agentID)
 	if !ok {
 		http.Error(w, "agent not found", http.StatusNotFound)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, []map[string]string{{"time": "10:45", "action": "Initializing agent"}})
+	logs := a.Logs
+	if logs == nil {
+		logs = []models.LogEntry{}
+	}
+	writeJSON(w, http.StatusOK, logs)
 }
 
 func (h *Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
