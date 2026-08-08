@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"ai-persona-agent/internal/api"
 	"ai-persona-agent/internal/llm"
@@ -11,6 +12,9 @@ import (
 )
 
 func main() {
+	// Load local .env when present so users can put GROK_API_KEY in a file.
+	loadDotEnv()
+
 	s := store.New()
 	client := llm.NewClient()
 	if client.APIKey == "" {
@@ -31,5 +35,33 @@ func main() {
 	log.Printf("server listening on :%s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatal(err)
+	}
+}
+
+// loadDotEnv reads a local `.env` file (if present) and sets environment
+// variables from KEY=VALUE lines. It intentionally avoids external deps.
+func loadDotEnv() {
+	data, err := os.ReadFile(".env")
+	if err != nil {
+		return
+	}
+	text := string(data)
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		val := strings.Trim(strings.TrimSpace(parts[1]), "\"'")
+		if key == "" {
+			continue
+		}
+		if os.Getenv(key) == "" {
+			os.Setenv(key, val)
+		}
 	}
 }

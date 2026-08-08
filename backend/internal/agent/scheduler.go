@@ -16,19 +16,21 @@ import (
 // TODO(copilot): tune the interval. 15-30 min is reasonable for a 48h
 // evaluation window (gives ~100-190 cycles, plenty of chances to publish
 // without spamming).
-func StartScheduler(client *llm.Client, s *store.Store, agentID string, interval time.Duration) {
+func StartScheduler(client *llm.Client, s *store.Store, agentID string, interval time.Duration, runImmediately bool) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
 		log.Printf("[agent %s] scheduler started", agentID)
 
-		current := time.Now().UTC()
-		s.SetAgentLastRun(agentID, current, current.Add(interval))
-		if err := RunCycle(client, s, agentID); err != nil {
-			log.Printf("[agent %s] initial cycle error: %v", agentID, err)
-		} else {
-			log.Printf("[agent %s] initial cycle completed", agentID)
+		if runImmediately {
+			current := time.Now().UTC()
+			s.SetAgentLastRun(agentID, current, current.Add(interval))
+			if err := RunCycle(client, s, agentID); err != nil {
+				log.Printf("[agent %s] initial cycle error: %v", agentID, err)
+			} else {
+				log.Printf("[agent %s] initial cycle completed", agentID)
+			}
 		}
 
 		for range ticker.C {

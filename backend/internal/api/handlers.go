@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -74,15 +73,9 @@ func (h *Handlers) Init(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Store.CreateAgent(newAgent)
 
-	// Run one synchronous cycle at init so the feed can show a real post quickly.
-	if err := agent.RunCycle(h.Client, h.Store, agentID); err != nil {
-		// Log but continue; the scheduler will keep trying over time.
-		log.Printf("[agent %s] initial run cycle error: %v", agentID, err)
-	}
-
 	// Start the autonomous publish loop immediately after initialization.
-	// A shorter interval helps the agent generate live content within the 48h evaluation window.
-	agent.StartScheduler(h.Client, h.Store, agentID, 10*time.Minute)
+	// This scheduler performs the first cycle immediately and then repeats.
+	agent.StartScheduler(h.Client, h.Store, agentID, 10*time.Minute, true)
 
 	writeJSON(w, http.StatusOK, initResponse{AgentID: agentID})
 }

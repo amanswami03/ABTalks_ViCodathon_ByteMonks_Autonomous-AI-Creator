@@ -88,38 +88,6 @@ func RunCycle(client *llm.Client, s *store.Store, agentID string) error {
 
 	return nil
 }
-		if s.HasSeenTopic(agentID, t.ID) {
-			continue // memory: don't reconsider the same topic
-		}
-		s.MarkTopicSeen(agentID, t.ID)
-
-		d, err := judgeTopic(client, agentObj, t)
-		if err != nil {
-			continue // log and move on in production
-		}
-		if d.Action != "publish" {
-			continue // editorial judgment: intentionally rejected
-		}
-
-		post, err := writePost(client, agentObj, t, d.Reason)
-		if err != nil {
-			continue
-		}
-
-		s.AddPost(agentID, models.Post{
-			ID:        uuid.NewString(),
-			CreatedAt: time.Now().UTC(),
-			Text:      post.Text,
-			Rationale: post.Rationale,
-			Sources:   []string{t.URL},
-		})
-
-		// One publish per cycle keeps a natural pace across the 48h window.
-		break
-	}
-
-	return nil
-}
 
 // judgeTopic asks the LLM whether a single topic is worth publishing,
 // given the persona's standards and what it has already covered.
