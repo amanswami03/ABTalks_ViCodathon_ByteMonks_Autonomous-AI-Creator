@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const grokAPIURL = "https://api.x.ai/v1/chat/completions"
+const groqAPIURL = "https://api.groq.com/openai/v1/responses"
 
 var titleRegex = regexp.MustCompile(`Title: ([^\n]+)`)
 var sourceRegex = regexp.MustCompile(`Source: ([^\n]+)`)
@@ -23,28 +23,29 @@ type Client struct {
 }
 
 func NewClient() *Client {
+	model := os.Getenv("GROQ_MODEL")
+	if model == "" {
+		model = "openai/gpt-oss-120b"
+	}
+
 	return &Client{
-		APIKey: os.Getenv("GROK_API_KEY"),
-		Model:  "grok-2-latest",
+		APIKey: os.Getenv("GROQ_API_KEY"),
+		Model:  model,
 	}
 }
 
-type message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
 type requestBody struct {
-	Model    string    `json:"model"`
-	Messages []message `json:"messages"`
+	Model string `json:"model"`
+	Input string `json:"input"`
 }
 
 type responseBody struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
+	Output []struct {
+		Content []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"content"`
+	} `json:"output"`
 }
 
 func (c *Client) Ask(systemPrompt, userPrompt string) (string, error) {
@@ -54,10 +55,7 @@ func (c *Client) Ask(systemPrompt, userPrompt string) (string, error) {
 
 	body := requestBody{
 		Model: c.Model,
-		Messages: []message{
-			{Role: "system", Content: systemPrompt},
-			{Role: "user", Content: userPrompt},
-		},
+		Input: strings.TrimSpace(systemPrompt + "\n\n" + userPrompt),
 	}
 
 	payload, err := json.Marshal(body)
@@ -84,7 +82,7 @@ func (c *Client) Ask(systemPrompt, userPrompt string) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("grok api error (%d): %s", resp.StatusCode, string(raw))
+		return "", fmt.Errorf("groq api error (%d): %s", resp.StatusCode, string(raw))
 	}
 
 	var parsed responseBody
@@ -92,10 +90,10 @@ func (c *Client) Ask(systemPrompt, userPrompt string) (string, error) {
 		return "", fmt.Errorf("unmarshal response: %w", err)
 	}
 
-	if len(parsed.Choices) == 0 || strings.TrimSpace(parsed.Choices[0].Message.Content) == "" {
-		return "", fmt.Errorf("empty response from grok")
+	if len(parsed.Output) == 0 || len(parsed.Output[0].Content) == 0 || strings.TrimSpace(parsed.Output[0].Content[0].Text) == "" {
+		return "", fmt.Errorf("empty response from groq")
 	}
-	return parsed.Choices[0].Message.Content, nil
+	return parsed.Output[0].Content[0].Text, nil
 }
 
 func fallbackAsk(systemPrompt, userPrompt string) (string, error) {
