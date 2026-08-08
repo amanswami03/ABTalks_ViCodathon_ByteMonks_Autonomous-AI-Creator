@@ -24,11 +24,14 @@ type Persona struct {
 
 // Agent is the in-memory representation of one initialized persona.
 type Agent struct {
-	ID      string
-	Persona Persona
-	Posts   []Post
+	ID              string
+	Persona         Persona
+	Posts           []Post
 	// SeenTopicIDs prevents re-processing the same topic twice (memory).
-	SeenTopicIDs map[string]bool
+	SeenTopicIDs    map[string]bool
+	LastPublishedAt time.Time
+	LastRunAt       time.Time
+	NextRunAt       time.Time
 }
 
 // Topic is a raw candidate pulled from a live information source

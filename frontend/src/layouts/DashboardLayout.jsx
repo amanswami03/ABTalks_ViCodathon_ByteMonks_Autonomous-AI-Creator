@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { getAgentFeed } from '../services/api';
+import { getAgentFeed, getAgentActivity } from '../services/api';
 
 const navItems = ['Overview', 'Feed', 'Topics', 'Memory', 'Analytics', 'Settings'];
 
@@ -63,6 +63,9 @@ export default function DashboardLayout() {
   const [posts, setPosts] = useState([]);
   const [isLoadingFeed, setIsLoadingFeed] = useState(true);
   const [feedError, setFeedError] = useState('');
+  const [activity, setActivity] = useState(null);
+  const [isLoadingActivity, setIsLoadingActivity] = useState(false);
+  const [activityError, setActivityError] = useState('');
 
   useEffect(() => {
     setActiveSection(getSectionFromPath(location.pathname));
@@ -104,8 +107,33 @@ export default function DashboardLayout() {
       }
     };
 
+    const loadActivity = async () => {
+      setIsLoadingActivity(true);
+
+      try {
+        const response = await getAgentActivity(agentId);
+        if (isMounted) {
+          setActivity(response);
+          setActivityError('');
+        }
+      } catch (error) {
+        if (isMounted) {
+          setActivityError('Unable to load agent activity.');
+          setActivity(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingActivity(false);
+        }
+      }
+    };
+
     loadFeed();
-    const interval = window.setInterval(loadFeed, 5000);
+    loadActivity();
+    const interval = window.setInterval(() => {
+      loadFeed();
+      loadActivity();
+    }, 5000);
 
     return () => {
       isMounted = false;
@@ -116,7 +144,7 @@ export default function DashboardLayout() {
   return (
     <div className="min-h-screen bg-[#222831] text-[#DFD0B8]">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
-        <aside className="w-full border-b border-[#948979]/20 bg-[#393E46] p-6 lg:w-72 lg:border-b-0 lg:border-r">
+        <aside className="hidden lg:block w-full border-b border-[#948979]/20 bg-[#393E46] p-6 lg:w-72 lg:border-b-0 lg:border-r">
           <div className="mb-8">
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#948979]">ABTalks</p>
             <h2 className="mt-2 text-xl font-semibold">Agent Console</h2>
@@ -146,6 +174,32 @@ export default function DashboardLayout() {
             ))}
           </nav>
         </aside>
+
+        <div className="block w-full border-b border-[#948979]/10 bg-[#393E46]/80 p-4 lg:hidden">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {navItems.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => {
+                  const routeKey = item === 'Overview' ? '' : item.toLowerCase();
+                  const targetPath = routeKey
+                    ? `/dashboard/${agentId}/${routeKey}`
+                    : `/dashboard/${agentId}`;
+
+                  navigate(targetPath);
+                }}
+                className={`min-w-[120px] rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                  activeSection === item
+                    ? 'border-[#948979] bg-[#948979] text-[#222831]'
+                    : 'border-[#948979]/20 bg-[#222831] text-[#DFD0B8]/80 hover:border-[#DFD0B8]/40 hover:text-[#DFD0B8]'
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="flex-1">
           <header className="border-b border-[#948979]/20 bg-[#393E46]/80 px-6 py-4 backdrop-blur">
@@ -187,14 +241,27 @@ export default function DashboardLayout() {
                 <div className="grid gap-6 xl:grid-cols-2">
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-[#DFD0B8]">Current Activity</h3>
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#DFD0B8]">Current Activity</h3>
+                        <p className="text-sm text-[#DFD0B8]/70">{activity?.currentTask || 'Reading live sources'}</p>
+                      </div>
                       <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-300">
-                        Online
+                        {activity?.status || 'Online'}
                       </span>
                     </div>
                     <p className="mt-4 text-sm leading-7 text-[#DFD0B8]/80">
                       {latestPost?.text || (isLoadingFeed ? 'Loading live activity...' : 'The agent is waiting for its first published post.')}
                     </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl bg-[#393E46] p-3 text-sm text-[#DFD0B8]/80">
+                        <p className="font-semibold text-[#DFD0B8]">Last published</p>
+                        <p className="mt-1">{activity?.lastPublishedAt || 'Never'}</p>
+                      </div>
+                      <div className="rounded-2xl bg-[#393E46] p-3 text-sm text-[#DFD0B8]/80">
+                        <p className="font-semibold text-[#DFD0B8]">Next run</p>
+                        <p className="mt-1">{activity?.nextRunAt || 'Pending'}</p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
@@ -259,7 +326,7 @@ export default function DashboardLayout() {
                       <div key={post.id || post.text} className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-base leading-7 text-[#DFD0B8]">{post.text}</p>
+                            <p className="break-words text-base leading-7 text-[#DFD0B8]">{post.text}</p>
                             <p className="mt-3 text-sm text-[#948979]">{formatPostTime(post.createdAt)}</p>
                           </div>
                           <span className="rounded-full border border-[#948979]/20 bg-[#393E46] px-3 py-1 text-xs uppercase tracking-[0.25em] text-[#DFD0B8]/70">

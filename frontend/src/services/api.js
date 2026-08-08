@@ -26,4 +26,9 @@ export const getAgentFeed = async (agentId) => {
   return response.data;
 };
 
+export const getAgentActivity = async (agentId) => {
+  const response = await api.get(`/agent/${agentId}/activity`);
+  return response.data;
+};
+
 export default api;

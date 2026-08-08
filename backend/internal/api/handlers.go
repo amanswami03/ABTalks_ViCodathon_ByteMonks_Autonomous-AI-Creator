@@ -73,9 +73,9 @@ func (h *Handlers) Init(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Store.CreateAgent(newAgent)
 
-	// This is the key line: start the autonomous loop right here.
-	// After this, nothing else should trigger publishing.
-	agent.StartScheduler(h.Client, h.Store, agentID, 20*time.Minute)
+	// Start the autonomous publish loop immediately after initialization.
+	// A shorter interval helps the agent generate live content within the 48h evaluation window.
+	agent.StartScheduler(h.Client, h.Store, agentID, 10*time.Minute)
 
 	writeJSON(w, http.StatusOK, initResponse{AgentID: agentID})
 }
@@ -135,16 +135,29 @@ func (h *Handlers) AgentActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, ok := h.Store.GetAgent(agentID)
+	a, ok := h.Store.GetAgent(agentID)
 	if !ok {
 		http.Error(w, "agent not found", http.StatusNotFound)
 		return
 	}
 
+	lastPublished := "Never"
+	if !a.LastPublishedAt.IsZero() {
+		lastPublished = a.LastPublishedAt.UTC().Format(time.RFC3339)
+	}
+
+	nextRun := "Pending"
+	if !a.NextRunAt.IsZero() {
+		nextRun = a.NextRunAt.UTC().Format(time.RFC3339)
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"status":      "Searching",
-		"currentTask": "Reading live sources",
-		"progress":    65,
+		"status":          "Searching",
+		"currentTask":     "Reading live sources",
+		"progress":        65,
+		"lastPublishedAt": lastPublished,
+		"lastRunAt":       a.LastRunAt.UTC().Format(time.RFC3339),
+		"nextRunAt":       nextRun,
 	})
 }
 

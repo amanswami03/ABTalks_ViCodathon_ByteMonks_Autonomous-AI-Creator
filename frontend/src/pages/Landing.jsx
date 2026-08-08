@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { initializeAgent } from '../services/api';
 
-const domains = ['Product Strategy', 'Marketing', 'Research', 'Operations'];
+const domains = ['AI Security', 'Machine Learning', 'AI Ethics', 'Developer Advocacy', 'Open Source', 'Product Strategy'];
 
 export default function Landing() {
   const [personaName, setPersonaName] = useState('');

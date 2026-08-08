@@ -21,14 +21,24 @@ func StartScheduler(client *llm.Client, s *store.Store, agentID string, interval
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
-		// Run once immediately so there's not a long silent gap after init.
+		log.Printf("[agent %s] scheduler started", agentID)
+
+		current := time.Now().UTC()
+		s.SetAgentLastRun(agentID, current, current.Add(interval))
 		if err := RunCycle(client, s, agentID); err != nil {
 			log.Printf("[agent %s] initial cycle error: %v", agentID, err)
+		} else {
+			log.Printf("[agent %s] initial cycle completed", agentID)
 		}
 
 		for range ticker.C {
+			current := time.Now().UTC()
+			s.SetAgentLastRun(agentID, current, current.Add(interval))
+			log.Printf("[agent %s] scheduler tick", agentID)
 			if err := RunCycle(client, s, agentID); err != nil {
 				log.Printf("[agent %s] cycle error: %v", agentID, err)
+			} else {
+				log.Printf("[agent %s] cycle completed", agentID)
 			}
 		}
 	}()

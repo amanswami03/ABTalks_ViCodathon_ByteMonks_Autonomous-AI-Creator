@@ -117,6 +117,17 @@ func (s *Store) AddPost(agentID string, post models.Post) {
 
 	if a, ok := s.agents[agentID]; ok {
 		a.Posts = append([]models.Post{post}, a.Posts...)
+		a.LastPublishedAt = post.CreatedAt
+	}
+}
+
+func (s *Store) SetAgentLastRun(agentID string, lastRun, nextRun time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if a, ok := s.agents[agentID]; ok {
+		a.LastRunAt = lastRun
+		a.NextRunAt = nextRun
 	}
 }
 
