@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { initializeAgent } from '../services/api';
 
@@ -10,6 +10,34 @@ export default function Landing() {
   const [isInitializing, setIsInitializing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+
+  // If an agentId already exists in localStorage, go straight to the dashboard.
+  useEffect(() => {
+    const existing = localStorage.getItem('agentId');
+    if (existing) {
+      navigate(`/dashboard/${existing}`);
+    }
+  }, [navigate]);
+
+  // Auto-initialize an agent on first visit if none exists.
+  useEffect(() => {
+    const autoInit = async () => {
+      try {
+        const existing = localStorage.getItem('agentId');
+        if (existing) return;
+
+        const response = await initializeAgent({ name: 'Autonomous Persona', domain: 'AI' });
+        if (response?.agentId) {
+          localStorage.setItem('agentId', response.agentId);
+          navigate(`/dashboard/${response.agentId}`);
+        }
+      } catch (err) {
+        // ignore; user can manually initialize via the form
+      }
+    };
+
+    autoInit();
+  }, [navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

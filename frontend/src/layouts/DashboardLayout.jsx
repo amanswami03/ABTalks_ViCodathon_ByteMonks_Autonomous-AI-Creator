@@ -74,6 +74,17 @@ export default function DashboardLayout() {
     setActiveSection(getSectionFromPath(location.pathname));
   }, [location.pathname]);
 
+  // Persist agentId when the dashboard is visited so the experience is remembered.
+  useEffect(() => {
+    if (agentId) {
+      try {
+        localStorage.setItem('agentId', agentId);
+      } catch {
+        // noop
+      }
+    }
+  }, [agentId]);
+
   const activeContent = sectionContent[activeSection];
   const latestPost = posts[0];
   const visibleFeed = posts.slice(0, 3);
