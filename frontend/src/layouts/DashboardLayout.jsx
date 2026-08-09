@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { getAgentFeed, getAgentActivity, getAgentDetails, getAgentLogs } from '../services/api';
+import { getAgentFeed, getAgentActivity, getAgentDetails, getAgentLogs, getAgentTopics } from '../services/api';
 
 const navItems = ['Overview', 'Feed', 'Topics', 'Memory', 'Analytics', 'Settings'];
 
@@ -70,6 +70,9 @@ export default function DashboardLayout() {
   const [logs, setLogs] = useState([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [logsError, setLogsError] = useState('');
+  const [topics, setTopics] = useState({ accepted: [], rejected: [] });
+  const [isLoadingTopics, setIsLoadingTopics] = useState(false);
+  const [topicsError, setTopicsError] = useState('');
 
   useEffect(() => {
     setActiveSection(getSectionFromPath(location.pathname));
@@ -154,6 +157,24 @@ export default function DashboardLayout() {
       }
     };
 
+    const loadTopics = async () => {
+      setIsLoadingTopics(true);
+      try {
+        const response = await getAgentTopics(agentId);
+        if (isMounted) {
+          setTopics(response || { accepted: [], rejected: [] });
+          setTopicsError('');
+        }
+      } catch (err) {
+        if (isMounted) {
+          setTopicsError('Unable to load topics from the backend.');
+          setTopics({ accepted: [], rejected: [] });
+        }
+      } finally {
+        if (isMounted) setIsLoadingTopics(false);
+      }
+    };
+
     const loadLogs = async () => {
       setIsLoadingLogs(true);
 
@@ -179,11 +200,13 @@ export default function DashboardLayout() {
     loadActivity();
     loadDetails();
     loadLogs();
+    loadTopics();
     const interval = window.setInterval(() => {
       loadFeed();
       loadActivity();
       loadDetails();
       loadLogs();
+      loadTopics();
     }, 5000);
 
     return () => {
@@ -449,12 +472,14 @@ export default function DashboardLayout() {
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold text-[#DFD0B8]">Accepted Topics</h3>
                       <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-300">
-                        {visibleFeed.length > 0 ? `${visibleFeed.length} selected` : '0 selected'}
+                        {topics.accepted && topics.accepted.length > 0 ? `${topics.accepted.length} selected` : '0 selected'}
                       </span>
                     </div>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      {visibleFeed.length > 0 ? (
-                        visibleFeed.map((post) => (
+                      {isLoadingTopics ? (
+                        <li>Loading topics...</li>
+                      ) : topics.accepted && topics.accepted.length > 0 ? (
+                        topics.accepted.map((post) => (
                           <li key={`${post.id || post.text}-accepted`} className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
                             {post.text}
                           </li>
@@ -469,15 +494,24 @@ export default function DashboardLayout() {
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold text-[#DFD0B8]">Rejected Topics</h3>
                       <span className="rounded-full border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-sm text-rose-300">
-                        {feedError ? '1 skipped' : '0 skipped'}
+                        {topics.rejected && topics.rejected.length > 0 ? `${topics.rejected.length} skipped` : '0 skipped'}
                       </span>
                     </div>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      {feedError ? (
+                      {topicsError ? (
                         <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
                           <div className="font-medium text-[#DFD0B8]">Live backend unavailable</div>
                           <p className="mt-2 text-xs leading-6 text-[#DFD0B8]/70">Reason for rejection: The backend could not be reached.</p>
                         </li>
+                      ) : isLoadingTopics ? (
+                        <li>Loading rejected topics...</li>
+                      ) : topics.rejected && topics.rejected.length > 0 ? (
+                        topics.rejected.map((t) => (
+                          <li key={`${t.title}-${t.time}`} className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
+                            <div className="font-medium text-[#DFD0B8]">{t.title || 'Untitled'}</div>
+                            <p className="mt-2 text-xs leading-6 text-[#DFD0B8]/70">Reason: {t.reason}</p>
+                          </li>
+                        ))
                       ) : (
                         <li className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
                           <div className="font-medium text-[#DFD0B8]">No rejected topics yet</div>

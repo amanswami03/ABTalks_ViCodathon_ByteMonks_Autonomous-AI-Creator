@@ -169,15 +169,55 @@ func (h *Handlers) AgentTopics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, ok := h.Store.GetAgent(agentID)
+	a, ok := h.Store.GetAgent(agentID)
 	if !ok {
 		http.Error(w, "agent not found", http.StatusNotFound)
 		return
 	}
 
+	// Build accepted topics from published posts
+	accepted := []map[string]interface{}{}
+	for _, p := range a.Posts {
+		accepted = append(accepted, map[string]interface{}{
+			"id":        p.ID,
+			"text":      p.Text,
+			"rationale": p.Rationale,
+			"createdAt": p.CreatedAt.UTC().Format(time.RFC3339),
+		})
+	}
+
+	// Build rejected topics by scanning recent logs for "rejected" actions.
+	// Log Details follow the shape: Topic "<title>" skipped: <reason>
+	rejected := []map[string]interface{}{}
+	for _, entry := range a.Logs {
+		if entry.Action != "rejected" {
+			continue
+		}
+		title := ""
+		reason := entry.Details
+		// Try to parse title and reason
+		// Expected: Topic "<title>" skipped: <reason>
+		if idx := strings.Index(entry.Details, "Topic \""); idx != -1 {
+			rest := entry.Details[idx+len("Topic \""):]
+			if j := strings.Index(rest, "\""); j != -1 {
+				title = rest[:j]
+				// Attempt to find the reason after '" skipped: '
+				if k := strings.Index(rest[j+1:], "skipped:"); k != -1 {
+					reason = strings.TrimSpace(rest[j+1+k+len("skipped:"):])
+				}
+			}
+		}
+
+		rejected = append(rejected, map[string]interface{}{
+			"title":   title,
+			"reason":  reason,
+			"time":    entry.Time.UTC().Format(time.RFC3339),
+		})
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"accepted": []map[string]interface{}{},
-		"rejected": []map[string]interface{}{},
+		"accepted": accepted,
+		"rejected": rejected,
 	})
 }
 
@@ -220,9 +260,17 @@ func (h *Handlers) AgentStats(w http.ResponseWriter, r *http.Request) {
 		sourceCount += len(post.Sources)
 	}
 
+	// Count rejected entries from logs
+	rejectedCount := 0
+	for _, entry := range a.Logs {
+		if entry.Action == "rejected" {
+			rejectedCount++
+		}
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"published":      len(a.Posts),
-		"rejected":       0,
+		"rejected":       rejectedCount,
 		"memoryNodes":    len(a.Posts) + 3,
 		"sources":        sourceCount,
 	})
