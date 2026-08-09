@@ -75,3 +75,32 @@ func TestAgentRoutesReturnContractShapes(t *testing.T) {
 		t.Fatalf("expected agent id %q, got %q", initPayload.AgentID, detailsPayload.ID)
 	}
 }
+
+func TestCustomTopicRouteReturnsGeneratedPost(t *testing.T) {
+	if os.Getenv("SKIP_DB_PING") != "1" {
+		t.Setenv("SKIP_DB_PING", "1")
+	}
+
+	s := store.New()
+	h := NewHandlers(s, &llm.Client{})
+
+	customReq := httptest.NewRequest(http.MethodPost, "/api/custom-topic", strings.NewReader(`{"topic":"AI explainability"}`))
+	customReq.Header.Set("Content-Type", "application/json")
+	customResp := httptest.NewRecorder()
+	h.ServeHTTP(customResp, customReq)
+
+	if customResp.Code != http.StatusOK {
+		t.Fatalf("expected custom-topic status 200, got %d", customResp.Code)
+	}
+
+	var payload struct {
+		Text      string `json:"text"`
+		Rationale string `json:"rationale"`
+	}
+	if err := json.NewDecoder(customResp.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode custom-topic payload: %v", err)
+	}
+	if payload.Text == "" || payload.Rationale == "" {
+		t.Fatalf("expected non-empty text and rationale, got %#v", payload)
+	}
+}

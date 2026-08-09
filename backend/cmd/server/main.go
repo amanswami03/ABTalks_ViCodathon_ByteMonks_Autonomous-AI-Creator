@@ -26,6 +26,7 @@ func main() {
 	mux.Handle("/api/agent/", h)
 	mux.HandleFunc("/api/agent/init", h.Init)
 	mux.HandleFunc("/api/agent/feed", h.Feed)
+	mux.Handle("/api/custom-topic", h)
 
 	port := os.Getenv("PORT")
 	if port == "" {

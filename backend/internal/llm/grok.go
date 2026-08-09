@@ -108,7 +108,7 @@ func fallbackAsk(systemPrompt, userPrompt string) (string, error) {
 		return `{"action":"publish","reason":"This candidate is timely and aligns with the persona’s technology domain."}` , nil
 	}
 
-	if strings.Contains(userPrompt, `"text": "the post content"`) {
+	if strings.Contains(userPrompt, `"text"`) && strings.Contains(userPrompt, `"rationale"`) {
 		title := extractField(userPrompt, titleRegex)
 		source := extractField(userPrompt, sourceRegex)
 		why := extractField(userPrompt, whyRegex)
