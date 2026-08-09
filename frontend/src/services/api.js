@@ -38,6 +38,11 @@ export const getAgentTopics = async (agentId) => {
   return response.data;
 };
 
+export const submitCustomTopic = async (topic) => {
+  const response = await api.post('/custom-topic', { topic });
+  return response.data;
+};
+
 export const getAgentLogs = async (agentId) => {
   const response = await api.get(`/agent/${agentId}/logs`);
   return response.data;

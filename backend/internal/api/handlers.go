@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -236,6 +237,72 @@ func (h *Handlers) AgentTopics(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handlers) CustomTopic(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost || r.URL.Path != "/api/custom-topic" {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+
+	var payload struct {
+		Topic string `json:"topic"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(payload.Topic) == "" {
+		http.Error(w, "topic is required", http.StatusBadRequest)
+		return
+	}
+
+	result, err := h.generateCustomTopicOutput(payload.Topic)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *Handlers) generateCustomTopicOutput(topic string) (map[string]string, error) {
+	defaultPrompt := `You are an independent AI commentator. Write a short high-signal post in a concise, clear tone for a technology-savvy audience.`
+	prompt := fmt.Sprintf(`%s
+
+Topic: %s
+
+Respond with ONLY valid JSON, no other text:
+{"text":"the post content","rationale":"why this topic matters"}`,
+		defaultPrompt, topic)
+
+	raw, err := h.Client.Ask(defaultPrompt, prompt)
+	if err != nil {
+		return nil, err
+	}
+
+	var output struct {
+		Text      string `json:"text"`
+		Rationale string `json:"rationale"`
+	}
+	clean := strings.TrimSpace(raw)
+	if err := json.Unmarshal([]byte(extractJSON(clean)), &output); err != nil {
+		return nil, fmt.Errorf("parsing custom topic json: %w (raw: %s)", err, clean)
+	}
+
+	return map[string]string{
+		"text":      output.Text,
+		"rationale": output.Rationale,
+	}, nil
+}
+
+func extractJSON(raw string) string {
+	start := strings.Index(raw, "{")
+	end := strings.LastIndex(raw, "}")
+	if start == -1 || end == -1 || end <= start {
+		return raw
+	}
+	return raw[start : end+1]
+}
+
 // AddRejectedTopic handles POST /api/agent/{id}/rejected to manually add a
 // rejected topic for an agent. This is useful for testing and for injecting
 // historical rejected items when the LLM ran before persistent storage was
@@ -367,6 +434,10 @@ func (h *Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method == http.MethodGet && r.URL.Path == "/api/agent/feed" {
 		h.Feed(w, r)
+		return
+	}
+	if r.Method == http.MethodPost && r.URL.Path == "/api/custom-topic" {
+		h.CustomTopic(w, r)
 		return
 	}
 	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/api/agent/") && strings.HasSuffix(r.URL.Path, "/rejected") {

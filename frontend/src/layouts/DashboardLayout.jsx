@@ -73,6 +73,10 @@ export default function DashboardLayout() {
   const [topics, setTopics] = useState({ accepted: [], rejected: [] });
   const [isLoadingTopics, setIsLoadingTopics] = useState(false);
   const [topicsError, setTopicsError] = useState('');
+  const [customTopic, setCustomTopic] = useState('');
+  const [customResponse, setCustomResponse] = useState(null);
+  const [isSubmittingCustomTopic, setIsSubmittingCustomTopic] = useState(false);
+  const [customTopicError, setCustomTopicError] = useState('');
 
   useEffect(() => {
     setActiveSection(getSectionFromPath(location.pathname));
@@ -176,6 +180,32 @@ export default function DashboardLayout() {
         }
       } finally {
         if (isMounted) setIsLoadingTopics(false);
+      }
+    };
+
+    const submitCustomTopicRequest = async (event) => {
+      event.preventDefault();
+      if (!customTopic.trim()) {
+        setCustomTopicError('Please enter a topic before submitting.');
+        return;
+      }
+
+      setIsSubmittingCustomTopic(true);
+      setCustomTopicError('');
+      setCustomResponse(null);
+      try {
+        const response = await submitCustomTopic(agentId, customTopic.trim());
+        if (isMounted) {
+          setCustomResponse(response);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setCustomTopicError('Unable to generate output for that topic. Please try again.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsSubmittingCustomTopic(false);
+        }
       }
     };
 
@@ -523,6 +553,39 @@ export default function DashboardLayout() {
                         </li>
                       )}
                     </ul>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
+                    <h3 className="text-lg font-semibold text-[#DFD0B8]">Custom Topic Generator</h3>
+                    <p className="mt-2 text-sm leading-6 text-[#DFD0B8]/70">Type any topic, and the model will generate a short post and rationale on that subject.</p>
+                    <form className="mt-4 space-y-3" onSubmit={submitCustomTopicRequest}>
+                      <textarea
+                        value={customTopic}
+                        onChange={(event) => setCustomTopic(event.target.value)}
+                        rows={4}
+                        placeholder="Enter a custom topic or question..."
+                        className="w-full rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3 text-sm text-[#DFD0B8] outline-none transition focus:border-[#948979]"
+                      />
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <button
+                          type="submit"
+                          disabled={isSubmittingCustomTopic}
+                          className="rounded-full bg-[#948979] px-5 py-3 text-sm font-semibold text-[#222831] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                          {isSubmittingCustomTopic ? 'Generating...' : 'Generate'}
+                        </button>
+                        {customTopicError ? (
+                          <p className="text-sm text-rose-300">{customTopicError}</p>
+                        ) : null}
+                      </div>
+                    </form>
+                    {customResponse ? (
+                      <div className="mt-5 rounded-2xl border border-[#948979]/20 bg-[#393E46] p-4 text-sm text-[#DFD0B8]/90">
+                        <div className="font-semibold text-[#DFD0B8]">Generated response</div>
+                        <p className="mt-3 whitespace-pre-wrap">{customResponse.text}</p>
+                        <div className="mt-3 text-xs text-[#DFD0B8]/70">Rationale: {customResponse.rationale}</div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ) : activeSection === 'Memory' ? (

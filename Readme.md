@@ -1,7 +1,11 @@
 # Autonomous AI Creator
 
+[![ABTalks Logo](https://via.placeholder.com/400x100.png?text=ABTalks+Logo)](https://autonomusaicreate.netlify.app/dashboard/5cdace38-fe63-4820-9860-37806a118059/topics)
+
 This repository contains a full-stack hackathon project that builds an autonomous AI publishing agent.
 The frontend is a React app built with Vite, and the backend is a Go server that manages agent lifecycle, topic discovery, publishing, and persistence.
+
+Visit the live site: [https://autonomusaicreate.netlify.app/dashboard/5cdace38-fe63-4820-9860-37806a118059/topics](https://autonomusaicreate.netlify.app/dashboard/5cdace38-fe63-4820-9860-37806a118059/topics)
 
 ## Project Structure
 
