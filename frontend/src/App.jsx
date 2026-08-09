@@ -1,4 +1,5 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import Home from './pages/Home';
 import Landing from './pages/Landing';
 import DashboardLayout from './layouts/DashboardLayout';
 
@@ -11,14 +12,14 @@ function DashboardRedirect() {
     navigate(`/dashboard/${agentId}`);
     return null;
   }
-  navigate('/');
+  navigate('/create');
   return null;
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<Home />} />
       <Route path="/create" element={<Landing />} />
       <Route path="/dashboard" element={<DashboardRedirect />} />
       <Route path="/dashboard/:agentId" element={<DashboardLayout />} />

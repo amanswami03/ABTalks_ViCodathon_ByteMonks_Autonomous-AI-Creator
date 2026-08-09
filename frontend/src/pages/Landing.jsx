@@ -16,27 +16,9 @@ export default function Landing() {
     const existing = localStorage.getItem('agentId');
     if (existing) {
       navigate(`/dashboard/${existing}`);
+      return;
     }
-  }, [navigate]);
-
-  // Auto-initialize an agent on first visit if none exists.
-  useEffect(() => {
-    const autoInit = async () => {
-      try {
-        const existing = localStorage.getItem('agentId');
-        if (existing) return;
-
-        const response = await initializeAgent({ name: 'Autonomous Persona', domain: 'AI' });
-        if (response?.agentId) {
-          localStorage.setItem('agentId', response.agentId);
-          navigate(`/dashboard/${response.agentId}`);
-        }
-      } catch (err) {
-        // ignore; user can manually initialize via the form
-      }
-    };
-
-    autoInit();
+    navigate('/create');
   }, [navigate]);
 
   const handleSubmit = async (event) => {

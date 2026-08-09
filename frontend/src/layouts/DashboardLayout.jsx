@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { getAgentFeed, getAgentActivity, getAgentLogs } from '../services/api';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { getAgentFeed, getAgentActivity, getAgentDetails, getAgentLogs } from '../services/api';
 
 const navItems = ['Overview', 'Feed', 'Topics', 'Memory', 'Analytics', 'Settings'];
 
@@ -269,10 +269,16 @@ export default function DashboardLayout() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  to="/"
+                  className="rounded-full border border-[#948979]/30 bg-[#948979]/10 px-4 py-2 text-sm font-semibold text-[#DFD0B8] transition hover:bg-[#948979]/20"
+                >
+                  Home
+                </Link>
                 <div className="rounded-full border border-[#948979]/30 bg-[#948979]/10 px-4 py-2 text-sm text-[#DFD0B8]">
                   Active Status
                 </div>
-                <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-300">
+                <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-sm text-[#34d399]">
                   Online
                 </div>
               </div>
