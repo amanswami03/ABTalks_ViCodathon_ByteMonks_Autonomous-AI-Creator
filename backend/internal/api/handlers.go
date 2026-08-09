@@ -75,7 +75,7 @@ func (h *Handlers) Init(w http.ResponseWriter, r *http.Request) {
 
 	// Start the autonomous publish loop immediately after initialization.
 	// This scheduler performs the first cycle immediately and then repeats.
-	agent.StartScheduler(h.Client, h.Store, agentID, 10*time.Minute, true)
+	agent.StartScheduler(h.Client, h.Store, agentID, 30*time.Second, true)
 
 	writeJSON(w, http.StatusOK, initResponse{AgentID: agentID})
 }
