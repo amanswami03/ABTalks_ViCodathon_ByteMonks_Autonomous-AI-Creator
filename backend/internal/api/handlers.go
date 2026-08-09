@@ -55,9 +55,10 @@ func (h *Handlers) Init(w http.ResponseWriter, r *http.Request) {
 		domain = "technology"
 	}
 
+	topic := normalizeTopic(req.Topic)
 	topicPrompt := ""
-	if strings.TrimSpace(req.Topic) != "" {
-		topicPrompt = "Focus first on topics related to: " + strings.TrimSpace(req.Topic) + ". "
+	if topic != "" {
+		topicPrompt = "Focus first on topics related to: " + topic + ". "
 	}
 
 	persona := models.Persona{
@@ -76,7 +77,7 @@ func (h *Handlers) Init(w http.ResponseWriter, r *http.Request) {
 	newAgent := &models.Agent{
 		ID:           agentID,
 		Persona:      persona,
-		SeedTopic:    strings.TrimSpace(req.Topic),
+		SeedTopic:    topic,
 		Posts:        []models.Post{},
 		SeenTopicIDs: make(map[string]bool),
 	}
@@ -300,6 +301,31 @@ Respond with ONLY valid JSON, no other text:
 		"text":      output.Text,
 		"rationale": output.Rationale,
 	}, nil
+}
+
+func normalizeTopic(topic string) string {
+	topic = strings.TrimSpace(topic)
+	if topic == "" {
+		return ""
+	}
+
+	normalized := strings.ToLower(topic)
+	prefixes := []string{
+		"write something about ",
+		"write content about ",
+		"write about ",
+		"write an article about ",
+		"tell me about ",
+		"please write about ",
+		"please write something about ",
+	}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(normalized, prefix) {
+			return strings.TrimSpace(topic[len(prefix):])
+		}
+	}
+
+	return topic
 }
 
 func extractJSON(raw string) string {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { getAgentFeed, getAgentActivity, getAgentDetails, getAgentLogs, getAgentTopics } from '../services/api';
+import { getAgentFeed, getAgentActivity, getAgentDetails, getAgentLogs, getAgentTopics, submitCustomTopic } from '../services/api';
 
 const navItems = ['Overview', 'Feed', 'Topics', 'Memory', 'Analytics', 'Settings'];
 
@@ -77,6 +77,26 @@ export default function DashboardLayout() {
   const [customResponse, setCustomResponse] = useState(null);
   const [isSubmittingCustomTopic, setIsSubmittingCustomTopic] = useState(false);
   const [customTopicError, setCustomTopicError] = useState('');
+
+  const submitCustomTopicRequest = async (event) => {
+    event.preventDefault();
+    if (!customTopic.trim()) {
+      setCustomTopicError('Please enter a topic before submitting.');
+      return;
+    }
+
+    setIsSubmittingCustomTopic(true);
+    setCustomTopicError('');
+    setCustomResponse(null);
+    try {
+      const response = await submitCustomTopic(customTopic.trim());
+      setCustomResponse(response);
+    } catch (err) {
+      setCustomTopicError('Unable to generate output for that topic. Please try again.');
+    } finally {
+      setIsSubmittingCustomTopic(false);
+    }
+  };
 
   useEffect(() => {
     setActiveSection(getSectionFromPath(location.pathname));
@@ -180,32 +200,6 @@ export default function DashboardLayout() {
         }
       } finally {
         if (isMounted) setIsLoadingTopics(false);
-      }
-    };
-
-    const submitCustomTopicRequest = async (event) => {
-      event.preventDefault();
-      if (!customTopic.trim()) {
-        setCustomTopicError('Please enter a topic before submitting.');
-        return;
-      }
-
-      setIsSubmittingCustomTopic(true);
-      setCustomTopicError('');
-      setCustomResponse(null);
-      try {
-        const response = await submitCustomTopic(agentId, customTopic.trim());
-        if (isMounted) {
-          setCustomResponse(response);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setCustomTopicError('Unable to generate output for that topic. Please try again.');
-        }
-      } finally {
-        if (isMounted) {
-          setIsSubmittingCustomTopic(false);
-        }
       }
     };
 
