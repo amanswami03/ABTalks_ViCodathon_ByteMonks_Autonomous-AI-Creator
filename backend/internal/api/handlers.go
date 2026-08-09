@@ -236,6 +236,54 @@ func (h *Handlers) AgentTopics(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// AddRejectedTopic handles POST /api/agent/{id}/rejected to manually add a
+// rejected topic for an agent. This is useful for testing and for injecting
+// historical rejected items when the LLM ran before persistent storage was
+// implemented.
+func (h *Handlers) AddRejectedTopic(w http.ResponseWriter, r *http.Request) {
+	agentID := strings.TrimPrefix(r.URL.Path, "/api/agent/")
+	agentID = strings.TrimSuffix(agentID, "/rejected")
+	if agentID == "" {
+		http.Error(w, "agent id required", http.StatusBadRequest)
+		return
+	}
+
+	_, ok := h.Store.GetAgent(agentID)
+	if !ok {
+		http.Error(w, "agent not found", http.StatusNotFound)
+		return
+	}
+
+	var payload struct {
+		TopicID string `json:"topicId"`
+		Title   string `json:"title"`
+		Reason  string `json:"reason"`
+		Time    string `json:"time"` // optional RFC3339 timestamp
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	tm := time.Now().UTC()
+	if payload.Time != "" {
+		if parsed, err := time.Parse(time.RFC3339, payload.Time); err == nil {
+			tm = parsed.UTC()
+		}
+	}
+
+	rt := models.RejectedTopic{
+		TopicID: payload.TopicID,
+		Title:   payload.Title,
+		Reason:  payload.Reason,
+		Time:    tm,
+	}
+
+	h.Store.AddRejectedTopic(agentID, rt)
+
+	writeJSON(w, http.StatusCreated, map[string]interface{}{"status": "ok", "rejected": rt})
+}
+
 func (h *Handlers) AgentMemory(w http.ResponseWriter, r *http.Request) {
 	agentID := strings.TrimPrefix(r.URL.Path, "/api/agent/")
 	agentID = strings.TrimSuffix(agentID, "/memory")
@@ -251,8 +299,8 @@ func (h *Handlers) AgentMemory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"interests":     []string{"Prompt Injection", "MCP", "AI Security"},
-		"recentTopics":  []string{"Claude", "Gemini", "OpenAI"},
+		"interests":    []string{"Prompt Injection", "MCP", "AI Security"},
+		"recentTopics": []string{"Claude", "Gemini", "OpenAI"},
 	})
 }
 
@@ -284,10 +332,10 @@ func (h *Handlers) AgentStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"published":      len(a.Posts),
-		"rejected":       rejectedCount,
-		"memoryNodes":    len(a.Posts) + 3,
-		"sources":        sourceCount,
+		"published":   len(a.Posts),
+		"rejected":    rejectedCount,
+		"memoryNodes": len(a.Posts) + 3,
+		"sources":     sourceCount,
 	})
 }
 
