@@ -186,8 +186,10 @@ func (h *Handlers) AgentTopics(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// Build rejected topics from persisted rejected topic records.
+	// Build rejected topics from persisted rejected topic records and
+	// fallback to parsing older log entries for historical rejected items.
 	rejected := []map[string]interface{}{}
+	seen := map[string]bool{}
 	for _, t := range a.RejectedTopics {
 		rejected = append(rejected, map[string]interface{}{
 			"topicId": t.TopicID,
@@ -195,6 +197,37 @@ func (h *Handlers) AgentTopics(w http.ResponseWriter, r *http.Request) {
 			"reason":  t.Reason,
 			"time":    t.Time.UTC().Format(time.RFC3339),
 		})
+		if t.Title != "" {
+			seen[t.Title] = true
+		}
+	}
+
+	// Parse older log-based rejected entries for agents that ran before
+	// rejected topics were persisted. Avoid duplicates by title.
+	for _, entry := range a.Logs {
+		if entry.Action != "rejected" {
+			continue
+		}
+		title := ""
+		reason := entry.Details
+		if idx := strings.Index(entry.Details, "Topic \""); idx != -1 {
+			rest := entry.Details[idx+len("Topic \""):]
+			if j := strings.Index(rest, "\""); j != -1 {
+				title = rest[:j]
+				if k := strings.Index(rest[j+1:], "skipped:"); k != -1 {
+					reason = strings.TrimSpace(rest[j+1+k+len("skipped:"):])
+				}
+			}
+		}
+		if title != "" && !seen[title] {
+			rejected = append(rejected, map[string]interface{}{
+				"topicId": "",
+				"title":   title,
+				"reason":  reason,
+				"time":    entry.Time.UTC().Format(time.RFC3339),
+			})
+			seen[title] = true
+		}
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
