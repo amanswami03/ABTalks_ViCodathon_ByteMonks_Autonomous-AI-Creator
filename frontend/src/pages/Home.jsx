@@ -42,7 +42,7 @@ export default function Home() {
           {agentId && (
             <div className="rounded-2xl border border-[#948979]/20 bg-[#222831] p-5 text-sm text-[#DFD0B8]/80">
               <p className="font-semibold text-[#DFD0B8]">Existing agent available</p>
-              <p className="mt-2">You can resume your current workspace, or create a new one to choose a different topic.</p>
+              <p className="mt-2">You can resume your current workspace from here.</p>
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                 <Link
                   to={`/dashboard/${agentId}`}
@@ -50,13 +50,6 @@ export default function Home() {
                 >
                   Resume agent
                 </Link>
-                <button
-                  type="button"
-                  onClick={handleCreateNew}
-                  className="rounded-full border border-[#948979]/20 px-5 py-3 text-sm font-semibold text-[#DFD0B8] hover:border-[#DFD0B8]/40"
-                >
-                  Choose new topic
-                </button>
               </div>
             </div>
           )}
