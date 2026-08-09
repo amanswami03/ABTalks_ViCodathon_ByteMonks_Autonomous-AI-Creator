@@ -40,13 +40,29 @@ func RunCycle(client *llm.Client, s *store.Store, agentID string) error {
 		return fmt.Errorf("agent %s not found", agentID)
 	}
 
-	candidates, err := topics.FetchTopics(10, agentObj.Persona.Domain)
-	if err != nil {
-		s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "error", Details: fmt.Sprintf("fetch topics failed: %v", err)})
-		return fmt.Errorf("fetch topics: %w", err)
-	}
-	if len(candidates) == 0 {
-		s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "idle", Details: "No candidate topics returned"})
+	var candidates []models.Topic
+	var err error
+
+	seedTopic := strings.TrimSpace(agentObj.SeedTopic)
+	if seedTopic != "" {
+		seedCandidate := models.Topic{
+			ID:     uuid.NewString(),
+			Title:  seedTopic,
+			URL:    "user-topic",
+			Source: "User topic",
+		}
+		candidates = []models.Topic{seedCandidate}
+		agentObj.SeedTopic = ""
+		s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "seeded", Details: fmt.Sprintf("Using seeded topic: %s", seedTopic)})
+	} else {
+		candidates, err = topics.FetchTopics(10, agentObj.Persona.Domain)
+		if err != nil {
+			s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "error", Details: fmt.Sprintf("fetch topics failed: %v", err)})
+			return fmt.Errorf("fetch topics: %w", err)
+		}
+		if len(candidates) == 0 {
+			s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "idle", Details: "No candidate topics returned"})
+		}
 	}
 
 	for _, t := range candidates {

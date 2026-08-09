@@ -33,6 +33,9 @@ type Agent struct {
 	ID              string
 	Persona         Persona
 	Posts           []Post
+	// SeedTopic holds a one-time topic submitted at agent creation.
+	// It is used by the first scheduler cycle to focus on the user-provided subject.
+	SeedTopic       string
 	// SeenTopicIDs prevents re-processing the same topic twice (memory).
 	SeenTopicIDs    map[string]bool
 	RejectedTopics  []RejectedTopic

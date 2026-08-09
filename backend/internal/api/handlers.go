@@ -76,6 +76,7 @@ func (h *Handlers) Init(w http.ResponseWriter, r *http.Request) {
 	newAgent := &models.Agent{
 		ID:           agentID,
 		Persona:      persona,
+		SeedTopic:    strings.TrimSpace(req.Topic),
 		Posts:        []models.Post{},
 		SeenTopicIDs: make(map[string]bool),
 	}
