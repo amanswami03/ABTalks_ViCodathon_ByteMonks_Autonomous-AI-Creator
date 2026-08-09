@@ -62,7 +62,12 @@ func RunCycle(client *llm.Client, s *store.Store, agentID string) error {
 			continue // log and move on in production
 		}
 		if d.Action != "publish" {
-			s.AddLog(agentID, models.LogEntry{Time: time.Now().UTC(), Action: "rejected", Details: fmt.Sprintf("Topic %q skipped: %s", t.Title, d.Reason)})
+			s.AddRejectedTopic(agentID, models.RejectedTopic{
+				TopicID: t.ID,
+				Title:   t.Title,
+				Reason:  d.Reason,
+				Time:    time.Now().UTC(),
+			})
 			continue // editorial judgment: intentionally rejected
 		}
 

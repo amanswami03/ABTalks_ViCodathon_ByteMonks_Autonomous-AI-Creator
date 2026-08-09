@@ -91,7 +91,7 @@ export default function DashboardLayout() {
 
   const activeContent = sectionContent[activeSection];
   const latestPost = posts[0];
-  const visibleFeed = posts.slice(0, 3);
+  const visibleFeed = activeSection === 'Feed' ? posts : posts.slice(0, 3);
   const sourceCount = posts.reduce((count, post) => count + (post.sources?.length || 0), 0);
   const responseQuality = posts.length > 0 ? `${Math.min(99, 70 + posts.length * 2)}%` : '—';
 
@@ -201,17 +201,9 @@ export default function DashboardLayout() {
     loadDetails();
     loadLogs();
     loadTopics();
-    const interval = window.setInterval(() => {
-      loadFeed();
-      loadActivity();
-      loadDetails();
-      loadLogs();
-      loadTopics();
-    }, 5000);
 
     return () => {
       isMounted = false;
-      window.clearInterval(interval);
     };
   }, [agentId]);
 
@@ -428,8 +420,8 @@ export default function DashboardLayout() {
                     <p className="text-sm text-rose-300">{feedError}</p>
                   ) : null}
 
-                  {visibleFeed.length > 0 ? (
-                    visibleFeed.map((post) => (
+                  {posts.length > 0 ? (
+                    posts.map((post) => (
                       <div key={post.id || post.text} className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                         <div className="flex items-start justify-between gap-4">
                           <div>

@@ -186,32 +186,14 @@ func (h *Handlers) AgentTopics(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// Build rejected topics by scanning recent logs for "rejected" actions.
-	// Log Details follow the shape: Topic "<title>" skipped: <reason>
+	// Build rejected topics from persisted rejected topic records.
 	rejected := []map[string]interface{}{}
-	for _, entry := range a.Logs {
-		if entry.Action != "rejected" {
-			continue
-		}
-		title := ""
-		reason := entry.Details
-		// Try to parse title and reason
-		// Expected: Topic "<title>" skipped: <reason>
-		if idx := strings.Index(entry.Details, "Topic \""); idx != -1 {
-			rest := entry.Details[idx+len("Topic \""):]
-			if j := strings.Index(rest, "\""); j != -1 {
-				title = rest[:j]
-				// Attempt to find the reason after '" skipped: '
-				if k := strings.Index(rest[j+1:], "skipped:"); k != -1 {
-					reason = strings.TrimSpace(rest[j+1+k+len("skipped:"):])
-				}
-			}
-		}
-
+	for _, t := range a.RejectedTopics {
 		rejected = append(rejected, map[string]interface{}{
-			"title":   title,
-			"reason":  reason,
-			"time":    entry.Time.UTC().Format(time.RFC3339),
+			"topicId": t.TopicID,
+			"title":   t.Title,
+			"reason":  t.Reason,
+			"time":    t.Time.UTC().Format(time.RFC3339),
 		})
 	}
 

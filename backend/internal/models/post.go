@@ -35,6 +35,7 @@ type Agent struct {
 	Posts           []Post
 	// SeenTopicIDs prevents re-processing the same topic twice (memory).
 	SeenTopicIDs    map[string]bool
+	RejectedTopics  []RejectedTopic
 	LastPublishedAt time.Time
 	LastRunAt       time.Time
 	NextRunAt       time.Time

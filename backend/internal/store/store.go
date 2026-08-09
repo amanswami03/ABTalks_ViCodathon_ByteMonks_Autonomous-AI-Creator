@@ -65,6 +65,14 @@ func NewWithConnectionString(connStr string) *Store {
 			topic_id TEXT NOT NULL,
 			PRIMARY KEY(agent_id, topic_id)
 		);
+		CREATE TABLE IF NOT EXISTS rejected_topics (
+			agent_id TEXT NOT NULL,
+			topic_id TEXT NOT NULL,
+			title TEXT NOT NULL,
+			reason TEXT NOT NULL,
+			time TIMESTAMPTZ NOT NULL,
+			PRIMARY KEY(agent_id, topic_id)
+		);
 	`); err != nil {
 		panic(fmt.Sprintf("initialize postgres schema: %v", err))
 	}
@@ -119,6 +127,29 @@ func (s *Store) AddPost(agentID string, post models.Post) {
 		a.Posts = append([]models.Post{post}, a.Posts...)
 		a.LastPublishedAt = post.CreatedAt
 		a.Logs = append([]models.LogEntry{{Time: time.Now().UTC(), Action: "published", Details: fmt.Sprintf("Published %q from %s", post.Text, post.Sources)}}, a.Logs...)
+	}
+}
+
+func (s *Store) AddRejectedTopic(agentID string, rejected models.RejectedTopic) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.db != nil {
+		if _, err := s.db.Exec(`
+			INSERT INTO rejected_topics (agent_id, topic_id, title, reason, time)
+			VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT (agent_id, topic_id) DO NOTHING
+		`, agentID, rejected.TopicID, rejected.Title, rejected.Reason, rejected.Time); err != nil {
+			panic(fmt.Sprintf("add rejected topic: %v", err))
+		}
+	}
+
+	if a, ok := s.agents[agentID]; ok {
+		a.RejectedTopics = append([]models.RejectedTopic{rejected}, a.RejectedTopics...)
+		a.Logs = append([]models.LogEntry{{Time: rejected.Time, Action: "rejected", Details: fmt.Sprintf("Topic %q skipped: %s", rejected.Title, rejected.Reason)}}, a.Logs...)
+		if len(a.Logs) > 20 {
+			a.Logs = a.Logs[:20]
+		}
 	}
 }
 
@@ -195,6 +226,7 @@ func (s *Store) loadAgents() {
 			Persona:      models.Persona{Name: name, Domain: domain},
 			Posts:        []models.Post{},
 			SeenTopicIDs: make(map[string]bool),
+			RejectedTopics: []models.RejectedTopic{},
 		}
 
 		postsRows, err := s.db.Query(`SELECT id, created_at, text, rationale, sources FROM posts WHERE agent_id = $1 ORDER BY created_at DESC`, id)
@@ -240,6 +272,30 @@ func (s *Store) loadAgents() {
 			agent.SeenTopicIDs[topicID] = true
 		}
 		topicRows.Close()
+
+		rejectedRows, err := s.db.Query(`SELECT topic_id, title, reason, time FROM rejected_topics WHERE agent_id = $1 ORDER BY time DESC`, id)
+		if err != nil {
+			panic(fmt.Sprintf("load rejected topics: %v", err))
+		}
+		for rejectedRows.Next() {
+			var topicID, title, reason, timeValue string
+			if err := rejectedRows.Scan(&topicID, &title, &reason, &timeValue); err != nil {
+				rejectedRows.Close()
+				panic(fmt.Sprintf("scan rejected topic row: %v", err))
+			}
+			tm, err := parseTime(timeValue)
+			if err != nil {
+				rejectedRows.Close()
+				panic(fmt.Sprintf("parse rejected topic time: %v", err))
+			}
+			agent.RejectedTopics = append(agent.RejectedTopics, models.RejectedTopic{
+				TopicID: topicID,
+				Title:   title,
+				Reason:  reason,
+				Time:    tm,
+			})
+		}
+		rejectedRows.Close()
 
 		s.agents[id] = agent
 	}
