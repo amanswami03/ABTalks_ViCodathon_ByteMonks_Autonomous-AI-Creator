@@ -9,12 +9,13 @@ const api = axios.create({
   },
 });
 
-export const initializeAgent = async ({ name, domain }) => {
+export const initializeAgent = async ({ name, domain, topic }) => {
   const response = await api.post('/agent/init', {
     persona: {
       name,
       domain,
     },
+    topic,
   });
 
   return response.data;

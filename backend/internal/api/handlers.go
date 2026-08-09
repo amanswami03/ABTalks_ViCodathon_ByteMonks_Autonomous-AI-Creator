@@ -54,11 +54,17 @@ func (h *Handlers) Init(w http.ResponseWriter, r *http.Request) {
 		domain = "technology"
 	}
 
+	topicPrompt := ""
+	if strings.TrimSpace(req.Topic) != "" {
+		topicPrompt = "Focus first on topics related to: " + strings.TrimSpace(req.Topic) + ". "
+	}
+
 	persona := models.Persona{
 		Name:   name,
 		Domain: domain,
 		SystemPrompt: "You are " + name + ", an independent " + domain +
 			" commentator with a sharp, skeptical, and high-signal voice. " +
+			topicPrompt +
 			"You value concrete evidence over hype, and you only publish when a topic " +
 			"is genuinely important, timely, and meaningfully relevant to " + domain + ". " +
 			"You reject fluff, weak takes, and recycled narratives. " +
