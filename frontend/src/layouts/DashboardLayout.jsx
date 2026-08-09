@@ -95,6 +95,9 @@ export default function DashboardLayout() {
   const sourceCount = posts.reduce((count, post) => count + (post.sources?.length || 0), 0);
   const responseQuality = posts.length > 0 ? `${Math.min(99, 70 + posts.length * 2)}%` : '—';
 
+  const formattedLastPublished = activity?.lastPublishedAt ? formatPostTime(activity.lastPublishedAt) : 'Never';
+  const formattedNextRun = activity?.nextRunAt ? formatPostTime(activity.nextRunAt) : 'Pending';
+
   useEffect(() => {
     if (!agentId) {
       setPosts([]);
@@ -330,11 +333,11 @@ export default function DashboardLayout() {
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       <div className="rounded-2xl bg-[#393E46] p-3 text-sm text-[#DFD0B8]/80">
                         <p className="font-semibold text-[#DFD0B8]">Last published</p>
-                        <p className="mt-1">{activity?.lastPublishedAt || 'Never'}</p>
+                        <p className="mt-1">{formattedLastPublished}</p>
                       </div>
                       <div className="rounded-2xl bg-[#393E46] p-3 text-sm text-[#DFD0B8]/80">
                         <p className="font-semibold text-[#DFD0B8]">Next run</p>
-                        <p className="mt-1">{activity?.nextRunAt || 'Pending'}</p>
+                        <p className="mt-1">{formattedNextRun}</p>
                       </div>
                     </div>
                   </div>
