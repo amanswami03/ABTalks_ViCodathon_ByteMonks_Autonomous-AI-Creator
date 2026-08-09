@@ -29,6 +29,7 @@ type initRequest struct {
 		Name   string `json:"name"`
 		Domain string `json:"domain"`
 	} `json:"persona"`
+	Topic string `json:"topic"`
 }
 
 type initResponse struct {
