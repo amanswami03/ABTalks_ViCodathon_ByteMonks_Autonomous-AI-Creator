@@ -369,6 +369,10 @@ func (h *Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.Feed(w, r)
 		return
 	}
+	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/api/agent/") && strings.HasSuffix(r.URL.Path, "/rejected") {
+		h.AddRejectedTopic(w, r)
+		return
+	}
 
 	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/api/agent/") {
 		suffix := strings.TrimPrefix(r.URL.Path, "/api/agent/")

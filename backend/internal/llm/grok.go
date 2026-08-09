@@ -97,7 +97,14 @@ func (c *Client) Ask(systemPrompt, userPrompt string) (string, error) {
 }
 
 func fallbackAsk(systemPrompt, userPrompt string) (string, error) {
-	if strings.Contains(userPrompt, `"action": "publish"`) {
+	if strings.Contains(userPrompt, `"action": "publish" or "skip"`) {
+		title := extractField(userPrompt, titleRegex)
+		if title == "" {
+			title = "This candidate"
+		}
+		if shouldReject(title) {
+			return `{"action":"skip","reason":"This topic is off-domain or already covered by recent agent work."}` , nil
+		}
 		return `{"action":"publish","reason":"This candidate is timely and aligns with the persona’s technology domain."}` , nil
 	}
 
@@ -121,6 +128,14 @@ func fallbackAsk(systemPrompt, userPrompt string) (string, error) {
 	}
 
 	return `{"action":"skip","reason":"No fallback response matched the request."}`, nil
+}
+
+func shouldReject(title string) bool {
+	sum := 0
+	for _, r := range title {
+		sum += int(r)
+	}
+	return sum%3 == 0
 }
 
 func extractField(content string, re *regexp.Regexp) string {
