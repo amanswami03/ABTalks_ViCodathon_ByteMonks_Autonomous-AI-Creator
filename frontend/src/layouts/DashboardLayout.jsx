@@ -91,7 +91,8 @@ export default function DashboardLayout() {
 
   const activeContent = sectionContent[activeSection];
   const latestPost = posts[0];
-  const visibleFeed = activeSection === 'Feed' ? posts : posts.slice(0, 3);
+  const overviewFeed = activeSection === 'Feed' ? posts : posts.slice(0, 3);
+  const topicQueueFeed = posts;
   const sourceCount = posts.reduce((count, post) => count + (post.sources?.length || 0), 0);
   const responseQuality = posts.length > 0 ? `${Math.min(99, 70 + posts.length * 2)}%` : '—';
 
@@ -205,8 +206,16 @@ export default function DashboardLayout() {
     loadLogs();
     loadTopics();
 
+    const refreshInterval = window.setInterval(() => {
+      loadFeed();
+      loadActivity();
+      loadLogs();
+      loadTopics();
+    }, 15000);
+
     return () => {
       isMounted = false;
+      window.clearInterval(refreshInterval);
     };
   }, [agentId]);
 
@@ -359,8 +368,8 @@ export default function DashboardLayout() {
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Recent Feed</h3>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      {visibleFeed.length > 0 ? (
-                        visibleFeed.map((post) => (
+                      {overviewFeed.length > 0 ? (
+                        overviewFeed.map((post) => (
                           <li key={post.id || post.text} className="leading-7">
                             • {post.text}
                           </li>
@@ -374,8 +383,8 @@ export default function DashboardLayout() {
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Topic Queue</h3>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      {visibleFeed.length > 0 ? (
-                        visibleFeed.map((post) => (
+                      {topicQueueFeed.length > 0 ? (
+                        topicQueueFeed.map((post) => (
                           <li key={`${post.id || post.text}-topic`} className="leading-7">
                             • {post.text}
                           </li>
@@ -521,8 +530,8 @@ export default function DashboardLayout() {
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Interests</h3>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      {visibleFeed.length > 0 ? (
-                        visibleFeed.map((post) => (
+                      {topicQueueFeed.length > 0 ? (
+                        topicQueueFeed.map((post) => (
                           <li key={`${post.id || post.text}-memory`} className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
                             {post.text}
                           </li>
@@ -536,8 +545,8 @@ export default function DashboardLayout() {
                   <div className="rounded-[24px] border border-[#948979]/20 bg-[#222831] p-6">
                     <h3 className="text-lg font-semibold text-[#DFD0B8]">Recent Topics</h3>
                     <ul className="mt-4 space-y-3 text-sm text-[#DFD0B8]/80">
-                      {visibleFeed.length > 0 ? (
-                        visibleFeed.map((post) => (
+                      {topicQueueFeed.length > 0 ? (
+                        topicQueueFeed.map((post) => (
                           <li key={`${post.id || post.text}-recent`} className="rounded-2xl border border-[#948979]/20 bg-[#393E46] px-4 py-3">
                             {post.text}
                           </li>
